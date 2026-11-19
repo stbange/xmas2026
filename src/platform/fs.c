@@ -69,6 +69,15 @@ void tb_fs_init_persistent(void)
 #endif
 }
 
+bool tb_fs_persistent_ready(void)
+{
+#ifdef SDL_PLATFORM_EMSCRIPTEN
+    return emscripten_run_script_int("Module.tbPersistReady ? 1 : 0") != 0;
+#else
+    return true;
+#endif
+}
+
 void tb_fs_sync(void)
 {
 #ifdef SDL_PLATFORM_EMSCRIPTEN

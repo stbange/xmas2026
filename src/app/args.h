@@ -18,6 +18,7 @@ typedef struct tb_args {
     tb_date date;
     uint64_t max_ticks; /* 0 = run until quit */
     uint64_t seed;
+    char data_dir[512]; /* saves/settings directory override ("" = default) */
 } tb_args;
 
 /* Parses argv (argv[0] is the program name). On error returns false and

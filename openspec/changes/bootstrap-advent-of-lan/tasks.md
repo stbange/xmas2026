@@ -13,11 +13,11 @@
 
 ## 2. Core & platform
 
-- [ ] 2.1 `core`: math, arenas/pools, containers, PCG RNG, hashing, logging, binary serialisation
-- [ ] 2.2 `platform`: SDL3 window + GL context (desktop GL 3.3 / GLES 3.0 / WebGL 2), file access, time, pref path / IDBFS
-- [ ] 2.3 Main loop with fixed 60 Hz sim step and interpolated rendering; `emscripten_set_main_loop` on web
-- [ ] 2.4 Headless mode (null renderer, null audio)
-- [ ] 2.5 Tests: unit tests for all `core` modules; headless smoke test
+- [x] 2.1 `core`: math, arenas/pools, containers, PCG RNG, hashing, logging, binary serialisation
+- [x] 2.2 `platform`: SDL3 window + GL context (desktop GL 3.3 / GLES 3.0 / WebGL 2), file access, time, pref path / IDBFS
+- [x] 2.3 Main loop with fixed 60 Hz sim step and interpolated rendering; `emscripten_set_main_loop` on web
+- [x] 2.4 Headless mode (null renderer, null audio)
+- [x] 2.5 Tests: unit tests for all `core` modules; headless smoke test
 
 ## 3. Simulation & player core
 
@@ -31,9 +31,9 @@
 
 ## 4. Calendar, saves & settings
 
-- [ ] 4.1 `game/calendar`: pure open-portal function (local date, server time, persisted unlocks, playtest/date flags)
-- [ ] 4.2 Save system (versioned, checksummed, backup on corruption) and settings (JSON)
-- [ ] 4.3 Tests: table-driven unit tests for every `advent-calendar` scenario incl. time-zone and DST edges; corrupt-save test
+- [x] 4.1 `game/calendar`: pure open-portal function (local date, server time, persisted unlocks, playtest/date flags)
+- [x] 4.2 Save system (versioned, checksummed, backup on corruption) and settings (JSON)
+- [x] 4.3 Tests: table-driven unit tests for every `advent-calendar` scenario incl. time-zone and DST edges; corrupt-save test
 
 ## 5. Renderer
 

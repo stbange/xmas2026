@@ -5,9 +5,10 @@ tb_require(sdl3)
 tb_add_library(tb_platform
   fs.c
   host.c
+  storage.c
   window.c
 )
-target_link_libraries(tb_platform PUBLIC tb_app tb_core tb::sdl3)
+target_link_libraries(tb_platform PUBLIC tb_game tb_app tb_core tb::sdl3)
 if(TB_ALLOW_DATE_OVERRIDE)
   target_compile_definitions(tb_platform PRIVATE TB_ALLOW_DATE_OVERRIDE=1)
 endif()
@@ -36,7 +37,8 @@ if(EMSCRIPTEN)
 else()
   # Game test: headless smoke run (deterministic, faster than real time).
   if(TB_BUILD_TESTS)
-    add_test(NAME game.headless_smoke COMMAND advent_of_lan --headless --ticks 600)
+    add_test(NAME game.headless_smoke COMMAND advent_of_lan --headless --ticks 600
+      --data-dir ${CMAKE_BINARY_DIR}/test-tmp/headless-smoke)
     set_tests_properties(game.headless_smoke PROPERTIES PASS_REGULAR_EXPRESSION "ticks=600 checksum=[0-9a-f]+" TIMEOUT 30)
   endif()
 endif()

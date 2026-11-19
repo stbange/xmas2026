@@ -22,6 +22,8 @@ bool tb_fs_exists(const char *path);
 bool tb_fs_remove(const char *path);
 /* Web: mounts IndexedDB storage and loads it (async). No-op elsewhere. */
 void tb_fs_init_persistent(void);
+/* True once persistent storage can be read (web: IndexedDB loaded). */
+bool tb_fs_persistent_ready(void);
 /* Web: flushes writes to IndexedDB. No-op elsewhere. */
 void tb_fs_sync(void);
 

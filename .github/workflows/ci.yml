@@ -23,8 +23,8 @@ jobs:
     name: Specs, trace & attribution
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: 22 }
       - name: OpenSpec validate
         run: npx -y @fission-ai/openspec@${OPENSPEC_VERSION} validate --all --strict --no-interactive
@@ -37,7 +37,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: ./tools/ci/install-linux-deps.sh
       - name: Configure
@@ -55,7 +55,7 @@ jobs:
     env:
       CC: ${{ matrix.cc }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: ./tools/ci/install-linux-deps.sh
       - name: Configure & build
@@ -67,7 +67,7 @@ jobs:
     name: Linux ASan + UBSan
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: ./tools/ci/install-linux-deps.sh
       - name: Configure, build & test
@@ -80,7 +80,7 @@ jobs:
     name: Coverage gate
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: ./tools/ci/install-linux-deps.sh
       - name: Configure, build & test
@@ -90,7 +90,7 @@ jobs:
           xvfb-run -a ctest --preset linux-coverage
       - name: Gate (>= 95 % lines, >= 90 % branches, exclusions < 5 %)
         run: python3 tools/ci/coverage_gate.py --build build/linux-coverage --html build/coverage-html/index.html
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: coverage-report
@@ -101,7 +101,7 @@ jobs:
     name: Windows MSVC
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Configure & build
         run: |
           cmake --preset windows-msvc
@@ -115,11 +115,11 @@ jobs:
     name: Web (Emscripten)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: mymindstorm/setup-emsdk@v14
         with:
           version: ${{ env.EMSDK_VERSION }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with: { node-version: 22 }
       - name: Build playtest web build
         env:
@@ -135,7 +135,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Browser smoke test
         run: node tests/web/smoke.mjs build/web-playtest/web-dist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: web-dist
           path: build/web-playtest/web-dist/
@@ -149,7 +149,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: web-dist
           path: web-dist

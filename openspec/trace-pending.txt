@@ -1,16 +1,7 @@
 # Spec scenarios that have no test yet. This list must only shrink.
 # Format: <capability>: <Scenario name>. Checked by tools/ci/spec_trace.py.
 
-advent-calendar: After Christmas Eve
-advent-calendar: Before December
-advent-calendar: Bumping into a closed door
-advent-calendar: Catching up
-advent-calendar: Client is ahead of the host
-advent-calendar: Clock set back
 advent-calendar: Playtesting all levels early
-advent-calendar: Portal opens at local midnight
-advent-calendar: Release build ignores override
-advent-calendar: Time traveller
 content-licensing: Credits disclaimer
 content-licensing: Default settings
 content-licensing: Incompatible dependency
@@ -77,7 +68,6 @@ player-core: Revive in time
 player-core: Same controls everywhere
 player-core: Strobe reduction
 quality-gates: Broken door
-quality-gates: Corrupt save
 quality-gates: Coverage drops
 quality-gates: Deterministic replay
 quality-gates: Exclusion grows too large

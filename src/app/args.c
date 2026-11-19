@@ -71,6 +71,7 @@ const char *tb_args_usage(void)
            "  --seed N           simulation seed\n"
            "  --playtest         open all portals, show debug overlay\n"
            "  --date YYYY-MM-DD  pretend it is this date (debug/playtest builds only)\n"
+           "  --data-dir PATH    store saves and settings in PATH\n"
            "  --help             show this help\n";
 }
 
@@ -98,6 +99,13 @@ bool tb_args_parse(tb_args *out, int argc, const char *const *argv, char *err, s
                 snprintf(err, err_len, "--seed needs a number");
                 return false;
             }
+            i++;
+        } else if (strcmp(a, "--data-dir") == 0) {
+            if (!next || !*next || strlen(next) + 2 > sizeof(out->data_dir)) {
+                snprintf(err, err_len, "--data-dir needs a path");
+                return false;
+            }
+            snprintf(out->data_dir, sizeof(out->data_dir), "%s", next);
             i++;
         } else if (strcmp(a, "--date") == 0) {
             if (!tb_parse_date(next, &out->date)) {

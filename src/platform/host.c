@@ -22,6 +22,64 @@ double tb_host_now(const tb_host *host)
            (double)SDL_GetPerformanceFrequency();
 }
 
+void tb_host_update_calendar(tb_host *host)
+{
+    SDL_Time now_ns = 0;
+    SDL_DateTime local;
+    SDL_zero(local);
+    SDL_GetCurrentTime(&now_ns);
+    SDL_TimeToDateTime(now_ns, &local, true);
+
+    tb_calendar_input in;
+    SDL_zero(in);
+    in.local_clock_utc =
+        host->clock_override_utc ? host->clock_override_utc : (int64_t)(now_ns / SDL_NS_PER_SECOND);
+    in.utc_offset = local.utc_offset;
+    in.persisted = host->save.unlocked;
+    in.playtest = host->app.args.playtest;
+#ifdef TB_ALLOW_DATE_OVERRIDE
+    in.allow_date_override = true;
+#endif
+    in.has_date_override = host->app.args.has_date;
+    in.date_override = host->app.args.date;
+    tb_calendar_evaluate(&in, &host->calendar);
+
+    if (host->calendar.persist != host->save.unlocked) {
+        host->save.unlocked = host->calendar.persist;
+        if (!tb_save_store(&host->storage.io, &host->save)) {
+            tb_log_warn("could not save progress");
+        }
+    }
+}
+
+bool tb_host_load_progress(tb_host *host)
+{
+    host->progress_loaded = true;
+    if (!tb_storage_init(&host->storage, host->app.args.data_dir)) {
+        return false;
+    }
+    tb_save_status st = tb_save_load(&host->storage.io, &host->save);
+    tb_log_info("%s", tb_save_status_message(st));
+    tb_storage_load_settings(&host->storage, &host->settings);
+    tb_host_update_calendar(host);
+
+    char open[96], next[48] = "";
+    tb_portal_mask_text(host->calendar.open, open, sizeof(open));
+    for (int n = 1; n <= TB_PORTAL_COUNT; n++) {
+        if (!tb_portal_is_open(host->calendar.open, n)) {
+            char cd[40];
+            tb_portal_countdown_text(&host->calendar, n, cd, sizeof(cd));
+            SDL_snprintf(next, sizeof(next), "; door %d %s", n, cd);
+            break;
+        }
+    }
+    tb_log_info("calendar: portals open: %s%s", open, next);
+    if (host->calendar.clock_corrected) {
+        tb_log_info("NOEL: %s", tb_calendar_time_travel_message());
+    }
+    return true;
+}
+
 tb_host_result tb_host_init(tb_host *host, int argc, const char *const *argv)
 {
     memset(host, 0, sizeof(*host));
@@ -62,6 +120,9 @@ tb_host_result tb_host_init(tb_host *host, int argc, const char *const *argv)
         host->has_window = true;
     }
     tb_app_init(&host->app, &args);
+    if (tb_fs_persistent_ready() && !tb_host_load_progress(host)) {
+        return TB_HOST_FAILURE;
+    }
     return TB_HOST_CONTINUE;
 }
 
@@ -80,6 +141,9 @@ tb_host_result tb_host_event(tb_host *host, const void *event)
 
 tb_host_result tb_host_iterate(tb_host *host)
 {
+    if (!host->progress_loaded && tb_fs_persistent_ready() && !tb_host_load_progress(host)) {
+        return TB_HOST_FAILURE;
+    }
     tb_app_status status = tb_app_frame(&host->app, tb_host_now(host), NULL);
     if (host->has_window) {
         /* Placeholder frame until the renderer exists: midnight blue that

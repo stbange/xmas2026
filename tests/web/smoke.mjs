@@ -66,6 +66,33 @@ async function boot(browser, label, contextOptions, query) {
   return problems.map((p) => `${label}: ${p}`);
 }
 
+// Saves must survive a reload (IndexedDB). Needs a build with date override
+// support (the playtest build) so portals unlock and a save gets written.
+async function persistence(browser) {
+  const context = await browser.newContext({ viewport: { width: 800, height: 600 } });
+  const page = await context.newPage();
+  const logs = [];
+  page.on("console", (m) => logs.push(m.text()));
+  const waitFor = async (re) => {
+    for (let i = 0; i < 100 && !logs.some((l) => re.test(l)); i++) await page.waitForTimeout(100);
+    return logs.find((l) => re.test(l));
+  };
+  await page.goto(`${baseUrl}/index.html?date=2026-12-05`);
+  const first = await waitFor(/portals open:/);
+  logs.length = 0;
+  await page.waitForTimeout(500); // let the IndexedDB sync finish
+  await page.goto(`${baseUrl}/index.html`);
+  const loaded = await waitFor(/Progress loaded/);
+  const second = await waitFor(/portals open:/);
+  await context.close();
+  const problems = [];
+  if (!first || !first.includes("portals open: 1-5")) problems.push(`first run: ${first}`);
+  if (!loaded) problems.push("save not found after reload");
+  if (!second || !second.includes("1-5")) problems.push(`after reload: ${second}`);
+  console.log(`${problems.length ? "FAIL" : "ok  "} persistence: ${second}`);
+  return problems.map((p) => `persistence: ${p}`);
+}
+
 if (!fs.existsSync(path.join(dist, "index.html"))) {
   console.error(`no web build at ${dist}`);
   process.exit(2);
@@ -78,6 +105,7 @@ try {
   problems = problems.concat(await boot(browser, "desktop", { viewport: { width: 1280, height: 720 } }, ""));
   problems = problems.concat(await boot(browser, "desktop playtest", { viewport: { width: 1280, height: 720 } }, "?playtest=1"));
   problems = problems.concat(await boot(browser, "mobile", { ...devices["Pixel 7"] }, ""));
+  if (process.env.TB_SKIP_PERSISTENCE !== "1") problems = problems.concat(await persistence(browser));
 } finally {
   await browser.close();
   server.close();

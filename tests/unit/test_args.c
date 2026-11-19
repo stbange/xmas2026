@@ -68,6 +68,22 @@ static void test_errors(void)
     TEST_ASSERT_FALSE(parse(&a, 3, date_bad));
 }
 
+static void test_data_dir(void)
+{
+    tb_args a;
+    const char *ok[] = {"game", "--data-dir", "/tmp/aol"};
+    TEST_ASSERT_TRUE(parse(&a, 3, ok));
+    TEST_ASSERT_EQUAL_STRING("/tmp/aol", a.data_dir);
+    const char *missing[] = {"game", "--data-dir"};
+    TEST_ASSERT_FALSE(parse(&a, 2, missing));
+    const char *empty[] = {"game", "--data-dir", ""};
+    TEST_ASSERT_FALSE(parse(&a, 3, empty));
+    static char longpath[600];
+    memset(longpath, 'a', sizeof(longpath) - 1);
+    const char *too_long[] = {"game", "--data-dir", longpath};
+    TEST_ASSERT_FALSE(parse(&a, 3, too_long));
+}
+
 static void test_parse_date_validation(void)
 {
     tb_date d;
@@ -102,6 +118,7 @@ int main(void)
     RUN_TEST(test_defaults);
     RUN_TEST(test_all_options);
     RUN_TEST(test_errors);
+    RUN_TEST(test_data_dir);
     RUN_TEST(test_parse_date_validation);
     RUN_TEST(test_usage_mentions_options);
     return UNITY_END();

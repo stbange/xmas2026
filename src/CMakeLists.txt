@@ -11,6 +11,7 @@ endfunction()
 
 add_subdirectory(core)
 add_subdirectory(app)
+add_subdirectory(game)
 
 if(TB_BUILD_GAME)
   add_subdirectory(platform)
