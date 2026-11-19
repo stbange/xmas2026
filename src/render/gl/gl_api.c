@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#define TB_GL_NAME(ret, name, args) "gl" #name,
+#define TB_GL_NAME(ret, name, args)   "gl" #name,
 #define TB_GL_OFFSET(ret, name, args) offsetof(tb_gl, name),
 static const char *const k_names[] = {TB_GL_FUNCS(TB_GL_NAME)};
 static const size_t k_offsets[] = {TB_GL_FUNCS(TB_GL_OFFSET)};
