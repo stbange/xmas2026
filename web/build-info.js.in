@@ -1,0 +1,2 @@
+// Generated at configure time. SPDX-License-Identifier: MIT
+window.TB_BUILD = { id: "@TB_BUILD_ID@", version: "@PROJECT_VERSION@" };

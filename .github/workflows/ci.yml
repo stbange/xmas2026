@@ -1,0 +1,164 @@
+# SPDX-License-Identifier: MIT
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  EMSDK_VERSION: 4.0.15
+  OPENSPEC_VERSION: 2.1.0
+
+jobs:
+  spec:
+    name: Specs, trace & attribution
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: OpenSpec validate
+        run: npx -y @fission-ai/openspec@${OPENSPEC_VERSION} validate --all --strict --no-interactive
+      - name: Spec trace (every scenario has a test or is pending)
+        run: python3 tools/ci/spec_trace.py
+      - name: Asset attribution
+        run: python3 tools/ci/check_attribution.py
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: ./tools/ci/install-linux-deps.sh
+      - name: Configure
+        run: cmake --preset linux-debug
+      - name: clang-format, clang-tidy, cppcheck
+        run: ./tools/ci/lint.sh build/linux-debug
+
+  linux:
+    name: Linux ${{ matrix.cc }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang]
+    env:
+      CC: ${{ matrix.cc }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: ./tools/ci/install-linux-deps.sh
+      - name: Configure & build
+        run: cmake --preset linux-debug && cmake --build --preset linux-debug
+      - name: Unit tests
+        run: xvfb-run -a ctest --preset linux-debug
+
+  sanitize:
+    name: Linux ASan + UBSan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: ./tools/ci/install-linux-deps.sh
+      - name: Configure, build & test
+        run: |
+          cmake --preset linux-sanitize
+          cmake --build --preset linux-sanitize
+          xvfb-run -a ctest --preset linux-sanitize
+
+  coverage:
+    name: Coverage gate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: ./tools/ci/install-linux-deps.sh
+      - name: Configure, build & test
+        run: |
+          cmake --preset linux-coverage
+          cmake --build --preset linux-coverage
+          xvfb-run -a ctest --preset linux-coverage
+      - name: Gate (>= 95 % lines, >= 90 % branches, exclusions < 5 %)
+        run: python3 tools/ci/coverage_gate.py --build build/linux-coverage --html build/coverage-html/index.html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: build/coverage-html/
+          if-no-files-found: ignore
+
+  windows:
+    name: Windows MSVC
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure & build
+        run: |
+          cmake --preset windows-msvc
+          cmake --build --preset windows-msvc
+      - name: Unit tests
+        env:
+          SDL_VIDEO_DRIVER: dummy
+        run: ctest --preset windows-msvc
+
+  web:
+    name: Web (Emscripten)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: ${{ env.EMSDK_VERSION }}
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Build playtest web build
+        env:
+          TB_BUILD_ID: ${{ github.sha }}
+        run: |
+          sudo apt-get install -y ninja-build
+          cmake --preset web-playtest
+          cmake --build --preset web-playtest
+      - name: Install Playwright
+        working-directory: tests/web
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Browser smoke test
+        run: node tests/web/smoke.mjs build/web-playtest/web-dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: build/web-playtest/web-dist/
+          include-hidden-files: true
+
+  deploy:
+    name: Publish playtest build to gh-pages
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [spec, lint, linux, sanitize, coverage, windows, web]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: web-dist
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: web-dist
+          force_orphan: true
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          commit_message: "Playtest build ${{ github.sha }}"

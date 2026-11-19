@@ -32,12 +32,13 @@
   the sim runs without a window or GPU.
 - **Coverage:** built with `--coverage` (GCC) and reported with `gcovr`.
   The CI job fails below **95 % lines / 90 % branches**.
-- **What is excluded from the coverage metric** (and must stay thin): the
-  files in `src/platform/` (SDL3/GL/Emscripten/WebXR glue) and the GL
-  backend's raw API calls in `src/render/gl/`. The exclusion list is
-  explicit in `gcovr.cfg`, reviewed in PRs, and the excluded code must stay
-  **under 5 % of all game C code** (CI checks the ratio). Those parts are
-  covered by the game, render and web tests instead.
+- **What is excluded from the coverage metric** (and must stay thin): only
+  `src/platform/entry/` (the SDL callback forwarders) and, later, the raw GL
+  calls in `src/render/gl/`. The rest of the platform layer (window, files,
+  host loop) is unit-tested under Xvfb with Mesa's software OpenGL. The
+  exclusion list lives in `tools/ci/coverage_gate.py`, is reviewed in PRs,
+  and the excluded code must stay **under 5 % of all game C code** (CI checks
+  the ratio). Those parts are covered by the game, render and web tests instead.
 - **Sanitisers:** a CI job runs all unit tests with AddressSanitizer and
   UndefinedBehaviorSanitizer.
 - **Static analysis:** `clang-tidy` and `cppcheck` with warnings as errors;

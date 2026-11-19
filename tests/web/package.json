@@ -1,0 +1,8 @@
+{
+  "name": "advent-of-lan-web-tests",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": { "smoke": "node smoke.mjs" },
+  "devDependencies": { "playwright": "1.63.0" }
+}

@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-reserved-identifier,
+  -bugprone-assignment-in-if-condition,
+  -bugprone-multi-level-implicit-pointer-conversion,
+  cert-err34-c,
+  clang-analyzer-*,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+  misc-redundant-expression,
+  performance-*,
+  readability-misleading-indentation,
+  readability-redundant-control-flow
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*/src/.*'

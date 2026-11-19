@@ -1,0 +1,115 @@
+/* SPDX-License-Identifier: MIT */
+#include "app/args.h"
+
+#include <stdio.h>
+#include <string.h>
+
+static bool parse_u64(const char *s, uint64_t *out)
+{
+    if (!s || !*s) {
+        return false;
+    }
+    uint64_t v = 0;
+    for (const char *p = s; *p; p++) {
+        if (*p < '0' || *p > '9') {
+            return false;
+        }
+        uint64_t d = (uint64_t)(*p - '0');
+        if (v > (UINT64_MAX - d) / 10u) {
+            return false;
+        }
+        v = v * 10u + d;
+    }
+    *out = v;
+    return true;
+}
+
+static bool is_leap(int y)
+{
+    return (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
+}
+
+bool tb_date_is_valid(tb_date d)
+{
+    static const int days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if (d.year < 1970 || d.year > 9999 || d.month < 1 || d.month > 12 || d.day < 1) {
+        return false;
+    }
+    int max = days[d.month - 1] + (d.month == 2 && is_leap(d.year) ? 1 : 0);
+    return d.day <= max;
+}
+
+bool tb_parse_date(const char *s, tb_date *out)
+{
+    if (!s || strlen(s) != 10 || s[4] != '-' || s[7] != '-') {
+        return false;
+    }
+    int v[3] = {0, 0, 0};
+    const int start[3] = {0, 5, 8}, len[3] = {4, 2, 2};
+    for (int f = 0; f < 3; f++) {
+        for (int i = 0; i < len[f]; i++) {
+            char c = s[start[f] + i];
+            if (c < '0' || c > '9') {
+                return false;
+            }
+            v[f] = v[f] * 10 + (c - '0');
+        }
+    }
+    tb_date d = {v[0], v[1], v[2]};
+    if (!tb_date_is_valid(d)) {
+        return false;
+    }
+    *out = d;
+    return true;
+}
+
+const char *tb_args_usage(void)
+{
+    return "usage: advent_of_lan [options]\n"
+           "  --headless         run without window, GPU or audio\n"
+           "  --ticks N          stop after N simulation ticks\n"
+           "  --seed N           simulation seed\n"
+           "  --playtest         open all portals, show debug overlay\n"
+           "  --date YYYY-MM-DD  pretend it is this date (debug/playtest builds only)\n"
+           "  --help             show this help\n";
+}
+
+bool tb_args_parse(tb_args *out, int argc, const char *const *argv, char *err, size_t err_len)
+{
+    memset(out, 0, sizeof(*out));
+    out->seed = 2026;
+    for (int i = 1; i < argc; i++) {
+        const char *a = argv[i];
+        const char *next = i + 1 < argc ? argv[i + 1] : NULL;
+        if (strcmp(a, "--headless") == 0) {
+            out->headless = true;
+        } else if (strcmp(a, "--playtest") == 0) {
+            out->playtest = true;
+        } else if (strcmp(a, "--help") == 0 || strcmp(a, "-h") == 0) {
+            out->help = true;
+        } else if (strcmp(a, "--ticks") == 0) {
+            if (!parse_u64(next, &out->max_ticks)) {
+                snprintf(err, err_len, "--ticks needs a number");
+                return false;
+            }
+            i++;
+        } else if (strcmp(a, "--seed") == 0) {
+            if (!parse_u64(next, &out->seed)) {
+                snprintf(err, err_len, "--seed needs a number");
+                return false;
+            }
+            i++;
+        } else if (strcmp(a, "--date") == 0) {
+            if (!tb_parse_date(next, &out->date)) {
+                snprintf(err, err_len, "--date needs a valid date YYYY-MM-DD");
+                return false;
+            }
+            out->has_date = true;
+            i++;
+        } else {
+            snprintf(err, err_len, "unknown option '%s'", a);
+            return false;
+        }
+    }
+    return true;
+}

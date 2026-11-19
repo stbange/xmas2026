@@ -1,0 +1,94 @@
+# Spec scenarios that have no test yet. This list must only shrink.
+# Format: <capability>: <Scenario name>. Checked by tools/ci/spec_trace.py.
+
+advent-calendar: After Christmas Eve
+advent-calendar: Before December
+advent-calendar: Bumping into a closed door
+advent-calendar: Catching up
+advent-calendar: Client is ahead of the host
+advent-calendar: Clock set back
+advent-calendar: Playtesting all levels early
+advent-calendar: Portal opens at local midnight
+advent-calendar: Release build ignores override
+advent-calendar: Time traveller
+content-licensing: Credits disclaimer
+content-licensing: Default settings
+content-licensing: Incompatible dependency
+content-licensing: Missing attribution
+content-licensing: Public build
+festive-hall: Finding a door
+festive-hall: Newly opened portal
+festive-hall: November arena
+festive-hall: Phone performance
+festive-hall: Restored hall
+festive-hall: Return after finishing
+festive-hall: Shutdown act
+festive-hall: Taking a trophy
+festive-hall: Three baubles
+input-controls: Contextual use
+input-controls: Gamepad only
+input-controls: Phone
+input-controls: Rebinding jump
+input-controls: Snap turn
+input-controls: Tablet with keyboard
+input-controls: Versus default
+level-framework: Bot lower bound
+level-framework: Co-op completion
+level-framework: Daily delivery
+level-framework: Mechanic count
+level-framework: Missing manifest field
+level-framework: Shared flight
+level-framework: Skipping a seen briefing
+level-framework: Touch button for a level action
+level-framework: Unreachable secret
+meta-story: Bots named after the crew
+meta-story: Custom memory
+meta-story: Naughty player restores
+meta-story: Playing out of order
+meta-story: Re-watching a memory
+meta-story: Sparing a surrendering enemy
+multiplayer: Host quits mid-level
+multiplayer: Joining by link
+multiplayer: Late joiner
+multiplayer: Lossy connection
+multiplayer: Offline LAN party
+multiplayer: Room full
+multiplayer: Second gamepad joins
+multiplayer: Shot at a moving target
+multiplayer: Two couches
+multiplayer: Two humans in CTF
+multiplayer: Version mismatch
+platform-targets: Comfort warning
+platform-targets: First load
+platform-targets: Publish after green CI
+platform-targets: Red CI does not publish
+platform-targets: Release artefacts
+platform-targets: Reload keeps settings
+platform-targets: Unsupported browser
+player-core: Armour absorbs damage
+player-core: Base kit in a new level
+player-core: Browser restart
+player-core: Death after a checkpoint
+player-core: Leaving with a loaner
+player-core: Level validation
+player-core: Pizza damage
+player-core: Results screen
+player-core: Revive in time
+player-core: Same controls everywhere
+player-core: Strobe reduction
+quality-gates: Broken door
+quality-gates: Corrupt save
+quality-gates: Coverage drops
+quality-gates: Deterministic replay
+quality-gates: Exclusion grows too large
+quality-gates: Packet loss
+quality-gates: Unintended visual change
+quality-gates: Untested scenario
+quality-gates: Web build broken
+retro-rendering: CRT in XR
+retro-rendering: Default preset at 1080p
+retro-rendering: Desktop web performance
+retro-rendering: Moving shadow
+retro-rendering: Quantised output
+retro-rendering: Sprite lit by a muzzle flash
+retro-rendering: Wall destroyed
