@@ -1,0 +1,19 @@
+schema: spec-driven
+
+context: |
+  Advent of LAN: a first-person retro-3D advent-calendar game (24 homage levels, 1-24 Dec 2026).
+  Game design concept lives in docs/concept/ and is the source for requirements.
+  Code: C17, SDL3, OpenGL 3.3 core / GLES 3.0 / WebGL 2 common subset. No C++ in the game.
+  Targets: Windows x64, Linux x64, Web (Emscripten), WebXR. Mobile web uses touch controls.
+  Multiplayer: split screen (<=4) and online (host-authoritative, WebSocket relay, <=8).
+  Quality gates: unit tests (Unity framework) with >=95% line / >=90% branch coverage of game C code
+  (excluding only the thin src/platform and raw GL backend, which must stay <5% of game C code);
+  automated game tests (headless golden-path bots, replays, level invariants, render goldens, web e2e).
+  Every spec scenario must map to at least one named test.
+  Licences: code MIT, art and content CC BY 4.0. Never use assets, names or layouts from the inspiring games.
+  Branching: develop on main only; gh-pages is written by CI for the playtest web build.
+
+rules:
+  tasks:
+    - Each task group ends with the tests that prove it
+    - Keep tasks small enough for one focused session

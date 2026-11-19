@@ -1,0 +1,25 @@
+# build output
+/build/
+/out/
+*.o
+*.obj
+*.a
+*.lib
+*.exe
+*.wasm
+*.pak
+# coverage
+*.gcda
+*.gcno
+coverage/
+# web tests
+node_modules/
+test-results/
+playwright-report/
+# personalisation pack (private, never commit)
+/content/personal/
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
