@@ -5,7 +5,10 @@
 Runs gcovr over a coverage build and enforces:
   * line coverage   >= 95 % of game C code
   * branch coverage >= 90 % of game C code
-  * excluded code (platform entry point, raw GL backend) < 5 % of game C lines
+  * excluded code (the platform entry point) < 5 % of game C lines
+
+The OpenGL backend is not excluded: CI tests it with a real GL context
+(Xvfb + Mesa llvmpipe).
 
 Usage: coverage_gate.py --build build/linux-coverage [--html out/coverage.html]
 """
@@ -19,7 +22,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 
 # The ONLY directories allowed to be excluded from the metric (see
 # openspec quality-gates: "Unit-test coverage gate").
-EXCLUDED_DIRS = ("src/platform/entry/", "src/render/gl/")
+EXCLUDED_DIRS = ("src/platform/entry/",)
 
 LINE_MIN = 95.0
 BRANCH_MIN = 90.0

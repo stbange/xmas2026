@@ -9,9 +9,6 @@ typedef struct SDL_Window SDL_Window;
 typedef struct tb_window {
     SDL_Window *window;
     void *gl; /* SDL_GLContext */
-    void (*glClearColor)(float, float, float, float);
-    void (*glClear)(unsigned int);
-    void (*glViewport)(int, int, int, int);
 } tb_window;
 
 /* Creates a resizable window with an OpenGL 3.3 core (desktop) or OpenGL ES
@@ -19,7 +16,11 @@ typedef struct tb_window {
  * everything created so far is released and false is returned. */
 bool tb_window_create(tb_window *w, const char *title, int width, int height);
 void tb_window_destroy(tb_window *w);
-/* Clears to a colour and presents the frame. */
-void tb_window_present_clear(tb_window *w, float r, float g, float b);
+/* Size of the drawable in pixels. */
+void tb_window_pixel_size(const tb_window *w, int *width, int *height);
+/* Presents the frame. */
+void tb_window_swap(tb_window *w);
+/* Loader for tb_gl_load (SDL_GL_GetProcAddress). */
+void *tb_window_gl_proc(const char *name);
 
 #endif

@@ -5,11 +5,14 @@
 #define TB_PLATFORM_HOST_H
 
 #include "app/app.h"
+#include "app/controls.h"
 #include "game/calendar.h"
 #include "game/save.h"
 #include "game/settings.h"
 #include "platform/storage.h"
 #include "platform/window.h"
+#include "render/gl/renderer.h"
+#include "render/scene.h"
 
 typedef enum tb_host_result { TB_HOST_CONTINUE = 0, TB_HOST_SUCCESS = 1, TB_HOST_FAILURE = 2 } tb_host_result;
 
@@ -18,6 +21,12 @@ typedef struct tb_host {
     tb_window window;
     bool sdl_initialised;
     bool has_window;
+    bool has_renderer;
+    bool mouse_captured;
+    tb_controls controls;
+    tb_renderer renderer;
+    tb_scene scene;
+    int static_lights;
     bool progress_loaded;
     uint64_t start_counter;
     tb_storage storage;
@@ -37,11 +46,14 @@ void tb_host_update_calendar(tb_host *host);
 /* Parses arguments, initialises SDL (video only when not headless) and
  * creates the window. */
 tb_host_result tb_host_init(tb_host *host, int argc, const char *const *argv);
-/* Handles one SDL event (quit, Escape). `event` is an SDL_Event*. */
+/* Handles one SDL event (quit, keys, mouse, focus). `event` is an
+ * SDL_Event*. Escape releases the mouse; the game never quits on a key. */
 tb_host_result tb_host_event(tb_host *host, const void *event);
 /* Runs one frame. */
 tb_host_result tb_host_iterate(tb_host *host);
 void tb_host_quit(tb_host *host);
+/* Default key bindings: SDL scancode -> tb_key, or -1 if unbound. */
+int tb_host_key_for_scancode(int scancode);
 /* Seconds since tb_host_init. */
 double tb_host_now(const tb_host *host);
 

@@ -6,9 +6,6 @@
 #include <SDL3/SDL.h>
 #include <string.h>
 
-#define TB_GL_COLOR_BUFFER_BIT 0x00004000u
-#define TB_GL_DEPTH_BUFFER_BIT 0x00000100u
-
 static void set_gl_attributes(void)
 {
 #ifdef SDL_PLATFORM_EMSCRIPTEN
@@ -41,14 +38,6 @@ bool tb_window_create(tb_window *w, const char *title, int width, int height)
         return false;
     }
     SDL_GL_SetSwapInterval(1);
-    w->glClearColor = (void (*)(float, float, float, float))SDL_GL_GetProcAddress("glClearColor");
-    w->glClear = (void (*)(unsigned int))SDL_GL_GetProcAddress("glClear");
-    w->glViewport = (void (*)(int, int, int, int))SDL_GL_GetProcAddress("glViewport");
-    if (!w->glClearColor || !w->glClear || !w->glViewport) {
-        tb_log_error("OpenGL entry points missing");
-        tb_window_destroy(w);
-        return false;
-    }
     return true;
 }
 
@@ -63,12 +52,20 @@ void tb_window_destroy(tb_window *w)
     memset(w, 0, sizeof(*w));
 }
 
-void tb_window_present_clear(tb_window *w, float r, float g, float b)
+void tb_window_pixel_size(const tb_window *w, int *width, int *height)
 {
-    int pw = 0, ph = 0;
-    SDL_GetWindowSizeInPixels(w->window, &pw, &ph);
-    w->glViewport(0, 0, pw, ph);
-    w->glClearColor(r, g, b, 1.0f);
-    w->glClear(TB_GL_COLOR_BUFFER_BIT | TB_GL_DEPTH_BUFFER_BIT);
+    SDL_GetWindowSizeInPixels(w->window, width, height);
+}
+
+void tb_window_swap(tb_window *w)
+{
     SDL_GL_SwapWindow(w->window);
+}
+
+void *tb_window_gl_proc(const char *name)
+{
+    SDL_FunctionPointer fn = SDL_GL_GetProcAddress(name);
+    void *p;
+    SDL_memcpy(&p, &fn, sizeof(p));
+    return p;
 }

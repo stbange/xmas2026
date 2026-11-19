@@ -37,12 +37,17 @@
 
 ## 5. Renderer
 
-- [ ] 5.1 Low-res render target, nearest upscale, UI layer at 2× internal resolution
-- [ ] 5.2 G-buffer + tiled lighting; forward fallback; directional + point/spot shadows
-- [ ] 5.3 Palette LUT quantisation, Bayer dithering, fog; optional CRT/wobble
-- [ ] 5.4 Sprites (8-direction, normal maps, palette swaps), voxel greedy mesher (+ destruction re-meshing), glTF skeletal + vertex-morph models, heightfield terrain
+- [x] 5.1 Low-res render target with integer nearest-neighbour upscale and letterboxing (resolution presets, split-screen rectangles)
+- [ ] 5.1b UI layer at 2x internal resolution (pixel font, HUD)
+- [x] 5.2 Forward lighting with up to 16 point lights per view, shadowed directional (moon) light, fog (see design 15)
+- [ ] 5.2b Point/spot light shadows (cube atlas), deferred G-buffer path for many lights, automatic forward fallback
+- [x] 5.3 Palette LUT quantisation and Bayer dithering (runtime-switchable)
+- [ ] 5.3b Optional CRT and affine-wobble filters
+- [x] 5.4 Brush polygonizer and greedy voxel mesher (CPU), dynamic boxes for entities
+- [ ] 5.4b Sprites (8-direction, normal maps, palette swaps), voxel models in the renderer (+ destruction re-meshing), glTF skeletal + vertex-morph models, heightfield terrain
 - [ ] 5.5 Mirrors/planar reflections; portal render-to-texture previews
-- [ ] 5.6 Tests: unit tests for culling, tile binning, mesher, atlas packer, LUT builder; llvmpipe render goldens for test scenes
+- [x] 5.6 Tests: unit tests for layout, palette/LUT, meshes, camera, scene; GL renderer tested with a real context (Xvfb + Mesa)
+- [ ] 5.6b llvmpipe render goldens for test scenes (perceptual diff)
 
 ## 6. Content pipeline
 
@@ -54,7 +59,7 @@
 
 ## 7. Input
 
-- [ ] 7.1 Action map with per-level input schemas; rebinding and persistence
+- [ ] 7.1 Action map with per-level input schemas; rebinding and persistence (keyboard/mouse default bindings and mouse look exist: app/controls)
 - [ ] 7.2 Gamepad support and aim assist (host-controlled in versus)
 - [ ] 7.3 Web touch overlay: auto-switching, floating stick, look area, contextual buttons, gyro, safe areas, left-handed layout
 - [ ] 7.4 Tests: unit tests for action mapping, switching logic and aim assist; Playwright mobile-emulation test

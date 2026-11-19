@@ -33,9 +33,9 @@
 - **Coverage:** built with `--coverage` (GCC) and reported with `gcovr`.
   The CI job fails below **95 % lines / 90 % branches**.
 - **What is excluded from the coverage metric** (and must stay thin): only
-  `src/platform/entry/` (the SDL callback forwarders) and, later, the raw GL
-  calls in `src/render/gl/`. The rest of the platform layer (window, files,
-  host loop) is unit-tested under Xvfb with Mesa's software OpenGL. The
+  `src/platform/entry/` (the SDL callback forwarders). The rest of the
+  platform layer (window, files, host loop) and the OpenGL renderer are
+  unit-tested under Xvfb with Mesa's software OpenGL. The
   exclusion list lives in `tools/ci/coverage_gate.py`, is reviewed in PRs,
   and the excluded code must stay **under 5 % of all game C code** (CI checks
   the ratio). Those parts are covered by the game, render and web tests instead.

@@ -92,6 +92,17 @@ unit coverage; automated game tests; MIT code / CC BY 4.0 art; development on
     further 10 s. With no teammate standing, a downed player is out at once.
     Solo players respawn at their checkpoint after 2 s.
 
+15. **Renderer: forward first, deferred later.** The first renderer is a
+    forward renderer (16 point lights per draw, one shadowed directional
+    light) into the low-res target, followed by the palette pass. It is
+    simple, runs on WebGL 2 everywhere and already gives the look. The
+    deferred G-buffer path from decision 4 is added when levels need more
+    lights than the forward path handles.
+
+16. **The OpenGL backend is not excluded from coverage.** It is unit-tested
+    with a real context (Xvfb + Mesa llvmpipe in CI); only the SDL entry
+    point is excluded.
+
 11. **Date logic** lives in `game/calendar` as a pure function
     `open_portals(local_datetime, server_time?, persisted_unlocks, flags)`, so
     every scenario of the `advent-calendar` spec is a table-driven unit test.

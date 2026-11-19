@@ -4,6 +4,7 @@
 #include "core/log.h"
 #include "core/version.h"
 #include "platform/fs.h"
+#include "render/view.h"
 
 #include <SDL3/SDL.h>
 #include <string.h>
@@ -80,6 +81,34 @@ bool tb_host_load_progress(tb_host *host)
     return true;
 }
 
+static bool create_renderer(tb_host *host)
+{
+#ifdef SDL_PLATFORM_EMSCRIPTEN
+    const bool gles = true;
+#else
+    const bool gles = false;
+#endif
+    if (!tb_renderer_create(&host->renderer, tb_window_gl_proc, gles)) {
+        tb_log_error("renderer: %s", host->renderer.error);
+        tb_renderer_destroy(&host->renderer);
+        return false;
+    }
+    host->has_renderer = true;
+    static const uint8_t floor[4] = {120, 110, 100, 255}, wall[4] = {150, 140, 170, 255},
+                         ceiling[4] = {70, 70, 90, 255};
+    tb_mesh mesh;
+    tb_mesh_init(&mesh, NULL);
+    bool ok = tb_mesh_add_geometry(&mesh, &host->app.geometry, floor, wall, ceiling) &&
+              tb_renderer_upload_world(&host->renderer, &mesh);
+    tb_mesh_free(&mesh);
+    tb_scene_init_test_arena(&host->scene);
+    host->static_lights = host->scene.light_count;
+    if (!ok) {
+        tb_log_error("renderer: could not upload the level");
+    }
+    return ok;
+}
+
 tb_host_result tb_host_init(tb_host *host, int argc, const char *const *argv)
 {
     memset(host, 0, sizeof(*host));
@@ -118,30 +147,127 @@ tb_host_result tb_host_init(tb_host *host, int argc, const char *const *argv)
     host->start_counter = SDL_GetPerformanceCounter();
     tb_fs_init_persistent();
 
+    tb_app_init(&host->app, &args);
+    tb_controls_init(&host->controls, host->app.sim.players[0].move.yaw);
     if (!args.headless) {
         if (!tb_window_create(&host->window, tb_version_banner(), 1280, 720)) {
             return TB_HOST_FAILURE;
         }
         host->has_window = true;
+        if (!create_renderer(host)) {
+            return TB_HOST_FAILURE;
+        }
     }
-    tb_app_init(&host->app, &args);
     if (tb_fs_persistent_ready() && !tb_host_load_progress(host)) {
         return TB_HOST_FAILURE;
     }
     return TB_HOST_CONTINUE;
 }
 
+int tb_host_key_for_scancode(int scancode)
+{
+    switch ((SDL_Scancode)scancode) {
+    case SDL_SCANCODE_W:
+    case SDL_SCANCODE_UP:
+        return TB_KEY_FORWARD;
+    case SDL_SCANCODE_S:
+    case SDL_SCANCODE_DOWN:
+        return TB_KEY_BACK;
+    case SDL_SCANCODE_A:
+    case SDL_SCANCODE_LEFT:
+        return TB_KEY_LEFT;
+    case SDL_SCANCODE_D:
+    case SDL_SCANCODE_RIGHT:
+        return TB_KEY_RIGHT;
+    case SDL_SCANCODE_SPACE:
+        return TB_KEY_JUMP;
+    case SDL_SCANCODE_LCTRL:
+    case SDL_SCANCODE_C:
+        return TB_KEY_CROUCH;
+    case SDL_SCANCODE_LSHIFT:
+        return TB_KEY_SPRINT;
+    case SDL_SCANCODE_E:
+        return TB_KEY_USE;
+    case SDL_SCANCODE_V:
+    case SDL_SCANCODE_F:
+        return TB_KEY_MELEE;
+    default:
+        if (scancode >= SDL_SCANCODE_1 && scancode <= SDL_SCANCODE_9) {
+            return TB_KEY_WEAPON1 + (scancode - SDL_SCANCODE_1);
+        }
+        return -1;
+    }
+}
+
+static void set_mouse_captured(tb_host *host, bool captured)
+{
+    if (host->has_window) {
+        SDL_SetWindowRelativeMouseMode(host->window.window, captured);
+    }
+    host->mouse_captured = captured;
+}
+
 tb_host_result tb_host_event(tb_host *host, const void *event)
 {
     const SDL_Event *e = event;
-    (void)host;
-    if (e->type == SDL_EVENT_QUIT) {
+    switch (e->type) {
+    case SDL_EVENT_QUIT:
         return TB_HOST_SUCCESS;
+    case SDL_EVENT_KEY_DOWN:
+    case SDL_EVENT_KEY_UP: {
+        bool down = e->type == SDL_EVENT_KEY_DOWN;
+        if (down && e->key.scancode == SDL_SCANCODE_ESCAPE) {
+            set_mouse_captured(host, false); /* Escape frees the mouse; it never quits */
+            break;
+        }
+        int key = tb_host_key_for_scancode((int)e->key.scancode);
+        if (key >= 0) {
+            tb_controls_key(&host->controls, (tb_key)key, down);
+        }
+        break;
     }
-    if (e->type == SDL_EVENT_KEY_DOWN && e->key.key == SDLK_ESCAPE) {
-        return TB_HOST_SUCCESS;
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+    case SDL_EVENT_MOUSE_BUTTON_UP: {
+        bool down = e->type == SDL_EVENT_MOUSE_BUTTON_DOWN;
+        if (down && !host->mouse_captured) {
+            set_mouse_captured(host, true); /* first click captures, does not fire */
+            break;
+        }
+        if (e->button.button == SDL_BUTTON_LEFT) {
+            tb_controls_key(&host->controls, TB_KEY_FIRE, down);
+        } else if (e->button.button == SDL_BUTTON_RIGHT) {
+            tb_controls_key(&host->controls, TB_KEY_ALT_FIRE, down);
+        }
+        break;
+    }
+    case SDL_EVENT_MOUSE_MOTION:
+        if (host->mouse_captured) {
+            tb_controls_mouse(&host->controls, e->motion.xrel, e->motion.yrel,
+                              host->settings.mouse_sensitivity);
+        }
+        break;
+    case SDL_EVENT_WINDOW_FOCUS_LOST:
+        tb_controls_release_all(&host->controls);
+        set_mouse_captured(host, false);
+        break;
+    default:
+        break;
     }
     return TB_HOST_CONTINUE;
+}
+
+static void draw_frame(tb_host *host)
+{
+    int w = 0, h = 0;
+    tb_window_pixel_size(&host->window, &w, &h);
+    tb_view_layout layout = tb_view_layout_for(w, h, (tb_res_preset)host->settings.resolution_preset);
+    host->renderer.options.palette_quantize = host->settings.palette_quantize;
+    host->renderer.options.dithering = host->settings.dithering;
+    tb_scene_reset_dynamic(&host->scene, host->static_lights);
+    float aspect = (float)layout.internal_w / (float)layout.internal_h;
+    tb_scene_from_sim(&host->scene, &host->app.sim, 0, host->settings.fov * TB_PI / 180.0f, aspect);
+    tb_renderer_draw(&host->renderer, &host->scene, &layout, w, h);
+    tb_window_swap(&host->window);
 }
 
 tb_host_result tb_host_iterate(tb_host *host)
@@ -149,12 +275,11 @@ tb_host_result tb_host_iterate(tb_host *host)
     if (!host->progress_loaded && tb_fs_persistent_ready() && !tb_host_load_progress(host)) {
         return TB_HOST_FAILURE;
     }
+    tb_input in = tb_controls_input(&host->controls);
+    tb_app_set_input(&host->app, 0, &in);
     tb_app_status status = tb_app_frame(&host->app, tb_host_now(host), NULL);
-    if (host->has_window) {
-        /* Placeholder frame until the renderer exists: midnight blue that
-         * pulses slowly with the simulation clock. */
-        float glow = 0.5f + 0.5f * SDL_sinf((float)tb_app_tick(&host->app) * 0.02f);
-        tb_window_present_clear(&host->window, 0.05f, 0.06f + 0.04f * glow, 0.13f + 0.08f * glow);
+    if (host->has_renderer) {
+        draw_frame(host);
     }
     if (status == TB_APP_DONE) {
         tb_log_info("ticks=%llu checksum=%016llx", (unsigned long long)tb_app_tick(&host->app),
@@ -166,6 +291,10 @@ tb_host_result tb_host_iterate(tb_host *host)
 
 void tb_host_quit(tb_host *host)
 {
+    if (host->has_renderer) {
+        tb_renderer_destroy(&host->renderer);
+        host->has_renderer = false;
+    }
     if (host->has_window) {
         tb_window_destroy(&host->window);
         host->has_window = false;

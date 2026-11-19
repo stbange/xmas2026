@@ -39,6 +39,7 @@ cmake --preset web-playtest && cmake --build --preset web-playtest
 ## Code style
 - C17, `clang-format` (see `.clang-format`), warnings are errors.
 - Game logic lives in pure, testable modules (`src/core`, `src/sim`, …);
-  only `src/platform/entry/` and the raw GL backend may stay untested.
+  only `src/platform/entry/` may stay untested (the GL renderer is tested
+  with a real GL context under Xvfb).
 - No hidden globals: time, randomness, files and the network come in through
   interfaces so tests can replace them.

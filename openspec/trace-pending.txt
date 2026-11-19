@@ -68,10 +68,8 @@ quality-gates: Unintended visual change
 quality-gates: Untested scenario
 quality-gates: Web build broken
 retro-rendering: CRT in XR
-retro-rendering: Default preset at 1080p
 retro-rendering: Desktop web performance
 retro-rendering: Moving shadow
-retro-rendering: Quantised output
 retro-rendering: Sprite lit by a muzzle flash
 retro-rendering: Wall destroyed
 advent-calendar: Release build ignores playtest switch

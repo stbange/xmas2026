@@ -66,19 +66,71 @@ static void test_bad_arguments_fail(void)
     tb_host_quit(&g_host);
 }
 
-static void test_events(void)
+static tb_host_result send(tb_host *h, SDL_EventType type, int scancode, int button, float dx)
 {
     SDL_Event e;
     SDL_zero(e);
-    e.type = SDL_EVENT_QUIT;
-    TEST_ASSERT_EQUAL_INT(TB_HOST_SUCCESS, tb_host_event(&g_host, &e));
-    e.type = SDL_EVENT_KEY_DOWN;
-    e.key.key = SDLK_ESCAPE;
-    TEST_ASSERT_EQUAL_INT(TB_HOST_SUCCESS, tb_host_event(&g_host, &e));
-    e.key.key = SDLK_SPACE;
-    TEST_ASSERT_EQUAL_INT(TB_HOST_CONTINUE, tb_host_event(&g_host, &e));
-    e.type = SDL_EVENT_MOUSE_MOTION;
-    TEST_ASSERT_EQUAL_INT(TB_HOST_CONTINUE, tb_host_event(&g_host, &e));
+    e.type = type;
+    e.key.scancode = (SDL_Scancode)scancode;
+    if (type == SDL_EVENT_MOUSE_BUTTON_DOWN || type == SDL_EVENT_MOUSE_BUTTON_UP) {
+        e.button.button = (Uint8)button;
+    }
+    if (type == SDL_EVENT_MOUSE_MOTION) {
+        e.motion.xrel = dx;
+    }
+    return tb_host_event(h, &e);
+}
+
+static void test_events(void)
+{
+    static tb_host h;
+    SDL_zero(h);
+    tb_controls_init(&h.controls, 0.0f);
+    h.settings.mouse_sensitivity = 1.0f;
+    TEST_ASSERT_EQUAL_INT(TB_HOST_SUCCESS, send(&h, SDL_EVENT_QUIT, 0, 0, 0));
+    /* Escape never quits (important in the browser); it frees the mouse. */
+    TEST_ASSERT_EQUAL_INT(TB_HOST_CONTINUE, send(&h, SDL_EVENT_KEY_DOWN, SDL_SCANCODE_ESCAPE, 0, 0));
+    send(&h, SDL_EVENT_KEY_DOWN, SDL_SCANCODE_W, 0, 0);
+    TEST_ASSERT_TRUE(h.controls.down[TB_KEY_FORWARD]);
+    send(&h, SDL_EVENT_KEY_UP, SDL_SCANCODE_W, 0, 0);
+    TEST_ASSERT_FALSE(h.controls.down[TB_KEY_FORWARD]);
+    send(&h, SDL_EVENT_KEY_DOWN, SDL_SCANCODE_F12, 0, 0); /* unbound */
+    /* Mouse look only while captured; the first click captures. */
+    send(&h, SDL_EVENT_MOUSE_MOTION, 0, 0, 50.0f);
+    TEST_ASSERT_EQUAL_FLOAT(0.0f, h.controls.yaw);
+    send(&h, SDL_EVENT_MOUSE_BUTTON_DOWN, 0, SDL_BUTTON_LEFT, 0);
+    TEST_ASSERT_TRUE(h.mouse_captured);
+    TEST_ASSERT_FALSE(h.controls.down[TB_KEY_FIRE]);
+    send(&h, SDL_EVENT_MOUSE_BUTTON_DOWN, 0, SDL_BUTTON_LEFT, 0);
+    TEST_ASSERT_TRUE(h.controls.down[TB_KEY_FIRE]);
+    send(&h, SDL_EVENT_MOUSE_BUTTON_UP, 0, SDL_BUTTON_LEFT, 0);
+    send(&h, SDL_EVENT_MOUSE_BUTTON_DOWN, 0, SDL_BUTTON_RIGHT, 0);
+    TEST_ASSERT_TRUE(h.controls.down[TB_KEY_ALT_FIRE]);
+    send(&h, SDL_EVENT_MOUSE_BUTTON_DOWN, 0, SDL_BUTTON_MIDDLE, 0);
+    send(&h, SDL_EVENT_MOUSE_MOTION, 0, 0, 50.0f);
+    TEST_ASSERT_TRUE(h.controls.yaw < 0.0f);
+    send(&h, SDL_EVENT_WINDOW_FOCUS_LOST, 0, 0, 0);
+    TEST_ASSERT_FALSE(h.mouse_captured);
+    TEST_ASSERT_FALSE(h.controls.down[TB_KEY_ALT_FIRE]);
+    send(&h, SDL_EVENT_KEY_DOWN, SDL_SCANCODE_ESCAPE, 0, 0);
+    TEST_ASSERT_EQUAL_INT(TB_HOST_CONTINUE, send(&h, SDL_EVENT_WINDOW_SHOWN, 0, 0, 0));
+}
+
+static void test_default_bindings(void)
+{
+    const int codes[] = {SDL_SCANCODE_W,     SDL_SCANCODE_UP,    SDL_SCANCODE_S, SDL_SCANCODE_DOWN,
+                         SDL_SCANCODE_A,     SDL_SCANCODE_LEFT,  SDL_SCANCODE_D, SDL_SCANCODE_RIGHT,
+                         SDL_SCANCODE_SPACE, SDL_SCANCODE_LCTRL, SDL_SCANCODE_C, SDL_SCANCODE_LSHIFT,
+                         SDL_SCANCODE_E,     SDL_SCANCODE_V,     SDL_SCANCODE_F, SDL_SCANCODE_1,
+                         SDL_SCANCODE_9};
+    const int keys[] = {TB_KEY_FORWARD, TB_KEY_FORWARD, TB_KEY_BACK,  TB_KEY_BACK,  TB_KEY_LEFT,
+                        TB_KEY_LEFT,    TB_KEY_RIGHT,   TB_KEY_RIGHT, TB_KEY_JUMP,  TB_KEY_CROUCH,
+                        TB_KEY_CROUCH,  TB_KEY_SPRINT,  TB_KEY_USE,   TB_KEY_MELEE, TB_KEY_MELEE,
+                        TB_KEY_WEAPON1, TB_KEY_WEAPON9};
+    for (size_t i = 0; i < sizeof(codes) / sizeof(codes[0]); i++) {
+        TEST_ASSERT_EQUAL_INT(keys[i], tb_host_key_for_scancode(codes[i]));
+    }
+    TEST_ASSERT_EQUAL_INT(-1, tb_host_key_for_scancode(SDL_SCANCODE_F12));
 }
 
 static void test_missing_video_driver_fails(void)
@@ -106,6 +158,8 @@ static void test_windowed_run_renders_frames(void)
         TEST_IGNORE_MESSAGE("no display with OpenGL 3.3 available");
     }
     TEST_ASSERT_TRUE(g_host.has_window);
+    TEST_ASSERT_TRUE(g_host.has_renderer);
+    tb_controls_key(&g_host.controls, TB_KEY_FORWARD, true);
     tb_host_result r = TB_HOST_CONTINUE;
     for (int i = 0; i < 1000 && r == TB_HOST_CONTINUE; i++) {
         r = tb_host_iterate(&g_host);
@@ -175,6 +229,7 @@ int main(void)
     RUN_TEST(test_help_exits_successfully);
     RUN_TEST(test_bad_arguments_fail);
     RUN_TEST(test_events);
+    RUN_TEST(test_default_bindings);
     RUN_TEST(test_missing_video_driver_fails);
     RUN_TEST(test_driver_without_opengl_fails);
     RUN_TEST(test_windowed_run_renders_frames);

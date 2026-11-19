@@ -8,7 +8,7 @@ tb_add_library(tb_platform
   storage.c
   window.c
 )
-target_link_libraries(tb_platform PUBLIC tb_game tb_app tb_core tb::sdl3)
+target_link_libraries(tb_platform PUBLIC tb_render tb_game tb_app tb_core tb::sdl3)
 if(TB_PLAYTEST_BUILD)
   target_compile_definitions(tb_platform PRIVATE TB_PLAYTEST_BUILD=1)
 endif()
