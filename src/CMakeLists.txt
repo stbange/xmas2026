@@ -10,6 +10,7 @@ function(tb_add_library name)
 endfunction()
 
 add_subdirectory(core)
+add_subdirectory(sim)
 add_subdirectory(app)
 add_subdirectory(game)
 

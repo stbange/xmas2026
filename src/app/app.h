@@ -6,29 +6,28 @@
 #define TB_APP_APP_H
 
 #include "app/args.h"
-#include "core/rng.h"
 #include "core/timestep.h"
+#include "sim/sim.h"
 
-#define TB_SIM_HZ 60u
+#define TB_SIM_HZ TB_SIM_HZ_TICKS
 
 typedef enum tb_app_status { TB_APP_RUNNING = 0, TB_APP_DONE = 1 } tb_app_status;
-
-/* Placeholder world until the simulation module exists: a few drifting
- * snowflakes, enough to prove determinism end to end. */
-#define TB_APP_SNOWFLAKES 64
-typedef struct tb_snowflake {
-    float x, y, vx, vy;
-} tb_snowflake;
 
 typedef struct tb_app {
     tb_args args;
     tb_timestep ts;
-    tb_rng rng;
-    tb_snowflake snow[TB_APP_SNOWFLAKES];
-    uint64_t quit_requested;
+    /* Until levels are loaded from content packages the app runs the
+     * built-in test arena with a few targets. */
+    tb_brush brushes[TB_TEST_ARENA_BRUSHES];
+    tb_geometry geometry;
+    tb_sim sim;
+    tb_input input[TB_MAX_PLAYERS]; /* latest input per player, applied each tick */
+    bool quit_requested;
 } tb_app;
 
 void tb_app_init(tb_app *app, const tb_args *args);
+/* Sets the input used for the next ticks for a player slot. */
+void tb_app_set_input(tb_app *app, int slot, const tb_input *in);
 /* Advances the app for a frame at real time `now_seconds`; returns how many
  * ticks were simulated via *ticks_out (may be NULL). */
 tb_app_status tb_app_frame(tb_app *app, double now_seconds, uint32_t *ticks_out);

@@ -56,20 +56,12 @@ platform-targets: Red CI does not publish
 platform-targets: Release artefacts
 platform-targets: Reload keeps settings
 platform-targets: Unsupported browser
-player-core: Armour absorbs damage
-player-core: Base kit in a new level
 player-core: Browser restart
-player-core: Death after a checkpoint
-player-core: Leaving with a loaner
 player-core: Level validation
-player-core: Pizza damage
-player-core: Results screen
-player-core: Revive in time
 player-core: Same controls everywhere
 player-core: Strobe reduction
 quality-gates: Broken door
 quality-gates: Coverage drops
-quality-gates: Deterministic replay
 quality-gates: Exclusion grows too large
 quality-gates: Packet loss
 quality-gates: Unintended visual change

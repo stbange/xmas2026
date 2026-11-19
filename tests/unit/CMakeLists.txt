@@ -9,6 +9,10 @@ foreach(m args app)
   tb_add_unit_test(${m} LIBS tb_app SOURCES ${TB_TEST_SUPPORT})
 endforeach()
 
+foreach(m geometry movement combat weapons inventory sim replay)
+  tb_add_unit_test(${m} LIBS tb_sim SOURCES ${TB_TEST_SUPPORT})
+endforeach()
+
 foreach(m calendar save settings)
   tb_add_unit_test(${m} LIBS tb_game)
 endforeach()

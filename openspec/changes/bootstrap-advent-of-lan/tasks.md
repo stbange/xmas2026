@@ -21,12 +21,12 @@
 
 ## 3. Simulation & player core
 
-- [ ] 3.1 Entity storage, components, systems
-- [ ] 3.2 Collision (brush hulls, capsules), player movement (walk, jump, crouch, sprint, step-up, air control)
-- [ ] 3.3 Health/armour, damage, difficulty scaling, checkpoints, death/respawn, co-op revive
-- [ ] 3.4 Weapons framework (hitscan, projectile, melee, charge); base kit (Candy Cane, Snowball Blaster, NOEL-Pad)
-- [ ] 3.5 Inventory with loaners and level-scoped removal; collectibles (bauble, floppies, challenge)
-- [ ] 3.6 Replay recording/playback with state checksums
+- [x] 3.1 Entity storage, components, systems
+- [x] 3.2 Collision (brush hulls; box hull for players, see design 12), player movement (walk, jump, crouch, sprint, step-up, air control)
+- [x] 3.3 Health/armour, damage, difficulty scaling, checkpoints, death/respawn, co-op revive
+- [x] 3.4 Weapons framework (hitscan, projectile, melee, charge); base kit (Candy Cane, Snowball Blaster, NOEL-Pad)
+- [x] 3.5 Inventory with loaners and level-scoped removal; collectibles (bauble, floppies, challenge)
+- [x] 3.6 Replay recording/playback with state checksums
 - [ ] 3.7 Tests: unit tests for every `player-core` scenario; determinism replay test
 
 ## 4. Calendar, saves & settings

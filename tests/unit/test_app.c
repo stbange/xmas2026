@@ -69,16 +69,19 @@ static void test_quit_request_ends_the_app(void)
     TEST_ASSERT_EQUAL_INT(TB_APP_DONE, tb_app_frame(&app, 0.0, NULL));
 }
 
-static void test_snow_wraps_around(void)
+static void test_player_input_reaches_the_simulation(void)
 {
-    tb_args a = headless_args(60 * 60 * 3, 5); /* three simulated minutes */
+    tb_args a = headless_args(0, 1);
     static tb_app app;
     tb_app_init(&app, &a);
-    while (tb_app_frame(&app, 0.0, NULL) == TB_APP_RUNNING) {
+    tb_vec3 start = app.sim.players[0].move.origin;
+    tb_input in = {127, 0, 0, 0, 0, 16384, 0}; /* walk north */
+    tb_app_set_input(&app, 0, &in);
+    tb_app_set_input(&app, 9, &in); /* invalid slot: ignored */
+    for (int i = 0; i < 30; i++) {
+        tb_app_frame(&app, 0.0, NULL);
     }
-    for (int i = 0; i < TB_APP_SNOWFLAKES; i++) {
-        TEST_ASSERT_TRUE(app.snow[i].y >= 0.0f && app.snow[i].y <= 1.0f);
-    }
+    TEST_ASSERT_TRUE(app.sim.players[0].move.origin.y > start.y + 1.0f);
 }
 
 int main(void)
@@ -88,6 +91,6 @@ int main(void)
     RUN_TEST(test_headless_simulates_one_tick_per_frame);
     RUN_TEST(test_realtime_mode_uses_fixed_steps);
     RUN_TEST(test_quit_request_ends_the_app);
-    RUN_TEST(test_snow_wraps_around);
+    RUN_TEST(test_player_input_reaches_the_simulation);
     return UNITY_END();
 }

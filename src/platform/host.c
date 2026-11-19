@@ -152,8 +152,8 @@ tb_host_result tb_host_iterate(tb_host *host)
     tb_app_status status = tb_app_frame(&host->app, tb_host_now(host), NULL);
     if (host->has_window) {
         /* Placeholder frame until the renderer exists: midnight blue that
-         * brightens with the drifting snow. */
-        float glow = host->app.snow[0].y;
+         * pulses slowly with the simulation clock. */
+        float glow = 0.5f + 0.5f * SDL_sinf((float)tb_app_tick(&host->app) * 0.02f);
         tb_window_present_clear(&host->window, 0.05f, 0.06f + 0.04f * glow, 0.13f + 0.08f * glow);
     }
     if (status == TB_APP_DONE) {

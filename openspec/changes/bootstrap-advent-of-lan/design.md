@@ -74,6 +74,24 @@ unit coverage; automated game tests; MIT code / CC BY 4.0 art; development on
 10. **Branching:** all development on `main` (as requested) with CI gates;
     `gh-pages` is an orphan branch written only by the deploy job.
 
+12. **Player collision uses an axis-aligned box hull, not a capsule.**
+    Quake-style box-versus-convex-brush traces are simple, exact and
+    deterministic, and they make classic movement tricks (step-up,
+    strafe-jumping) behave as players remember. Brushes get axial bevel
+    planes so boxes slide correctly along slopes. *Alternative:* capsules —
+    smoother on edges but more complex and less faithful to the era.
+
+13. **Entities are one fixed-size table of plain structs** with a type tag
+    and generation-checked handles (`tb_handle`). Simpler to serialise,
+    checksum and debug than separate component arrays at this scale
+    (≤ 256 entities per level); systems are still plain functions.
+
+14. **Revive timing:** a downed co-op player can be revived for up to 20 s
+    (a teammate holds Use for 3 s within 1.5 m; they get up with 30 health).
+    If nobody does, they are out and respawn at their last checkpoint after a
+    further 10 s. With no teammate standing, a downed player is out at once.
+    Solo players respawn at their checkpoint after 2 s.
+
 11. **Date logic** lives in `game/calendar` as a pure function
     `open_portals(local_datetime, server_time?, persisted_unlocks, flags)`, so
     every scenario of the `advent-calendar` spec is a table-driven unit test.
