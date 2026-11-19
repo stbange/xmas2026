@@ -2,14 +2,14 @@
 
 ## 1. Repository & CI foundation
 
-- [ ] 1.1 Add CMake project with presets (`linux-debug`, `linux-coverage`, `windows-msvc`, `web-release`) and pinned dependencies (SDL3, cglm, cgltf, stb, Lua, cJSON, ENet, Unity)
-- [ ] 1.2 Add `.clang-format`, `.clang-tidy`, warnings-as-errors
-- [ ] 1.3 Add GitHub Actions: spec validation, lint, Linux (gcc/clang + sanitisers), Windows MSVC, Emscripten build
-- [ ] 1.4 Add coverage job with gcovr thresholds (95 % lines / 90 % branches) and the platform-exclusion ratio check (< 5 %)
-- [ ] 1.5 Add the spec-trace check (every scenario referenced by a test)
-- [ ] 1.6 Add the gh-pages deploy job (main only, after all gates) and the build hash on the start screen
-- [ ] 1.7 Add `assets/ATTRIBUTION.md` and the attribution CI check; add `CONTRIBUTING.md` (MIT code / CC BY 4.0 art)
-- [ ] 1.8 Tests: a trivial unit test and coverage report run green in CI; deploy publishes a "hello" web build
+- [x] 1.1 Add CMake project with presets (`linux-debug`, `linux-coverage`, `windows-msvc`, `web-release`) and pinned dependencies (SDL3, cglm, cgltf, stb, Lua, cJSON, ENet, Unity)
+- [x] 1.2 Add `.clang-format`, `.clang-tidy`, warnings-as-errors
+- [x] 1.3 Add GitHub Actions: spec validation, lint, Linux (gcc/clang + sanitisers), Windows MSVC, Emscripten build
+- [x] 1.4 Add coverage job with gcovr thresholds (95 % lines / 90 % branches) and the platform-exclusion ratio check (< 5 %)
+- [x] 1.5 Add the spec-trace check (every scenario referenced by a test)
+- [x] 1.6 Add the gh-pages deploy job (main only, after all gates) and the build hash on the start screen
+- [x] 1.7 Add `assets/ATTRIBUTION.md` and the attribution CI check; add `CONTRIBUTING.md` (MIT code / CC BY 4.0 art)
+- [x] 1.8 Tests: a trivial unit test and coverage report run green in CI; deploy publishes a "hello" web build
 
 ## 2. Core & platform
 
