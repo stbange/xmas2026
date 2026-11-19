@@ -37,12 +37,12 @@ When the browser supports immersive VR, the web build SHALL show an "Enter VR" b
 - **WHEN** an XR player enters a level rated Intense
 - **THEN** a comfort warning is shown with the option to enable the comfort settings
 
-### Requirement: gh-pages playtest site
-Every successful build of the main branch SHALL be published to the gh-pages branch, served as the public playtest site, and SHALL display its build identifier on the start screen.
+### Requirement: gh-pages site
+Every successful build of the main branch SHALL be published to the gh-pages branch: the release web build at the site root (for players) and the playtest web build under `/playtest/` (for testing). Both SHALL display their build identifier on the start screen.
 
 #### Scenario: Publish after green CI
 - **WHEN** a commit on main passes all CI gates
-- **THEN** the gh-pages branch contains the web build of that commit and the start screen shows its short hash
+- **THEN** the gh-pages branch contains the release web build of that commit at its root and the playtest build under `playtest/`, and both start screens show its short hash
 
 #### Scenario: Red CI does not publish
 - **WHEN** a commit on main fails any CI gate

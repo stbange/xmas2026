@@ -121,24 +121,33 @@ jobs:
           version: ${{ env.EMSDK_VERSION }}
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
-      - name: Build playtest web build
+      - name: Build release and playtest web builds
         env:
           TB_BUILD_ID: ${{ github.sha }}
         run: |
           sudo apt-get install -y ninja-build
-          cmake --preset web-playtest
-          cmake --build --preset web-playtest
+          cmake --preset web-release && cmake --build --preset web-release
+          cmake --preset web-playtest && cmake --build --preset web-playtest
       - name: Install Playwright
         working-directory: tests/web
         run: |
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
-      - name: Browser smoke test
+      - name: Browser smoke test (playtest build)
         run: node tests/web/smoke.mjs build/web-playtest/web-dist
+      - name: Browser smoke test (release build ignores playtest switches)
+        run: node tests/web/smoke.mjs build/web-release/web-dist --release
+      - name: Assemble site (release at /, playtest at /playtest/)
+        run: |
+          mkdir -p site
+          cp -a build/web-release/web-dist/. site/
+          mkdir -p site/playtest
+          cp -a build/web-playtest/web-dist/. site/playtest/
+          rm -f site/playtest/.nojekyll
       - uses: actions/upload-artifact@v5
         with:
-          name: web-dist
-          path: build/web-playtest/web-dist/
+          name: web-site
+          path: site/
           include-hidden-files: true
 
   deploy:
@@ -151,13 +160,13 @@ jobs:
     steps:
       - uses: actions/download-artifact@v5
         with:
-          name: web-dist
-          path: web-dist
+          name: web-site
+          path: web-site
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: web-dist
+          publish_dir: web-site
           force_orphan: true
           user_name: github-actions[bot]
           user_email: 41898282+github-actions[bot]@users.noreply.github.com

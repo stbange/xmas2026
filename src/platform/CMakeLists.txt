@@ -9,8 +9,8 @@ tb_add_library(tb_platform
   window.c
 )
 target_link_libraries(tb_platform PUBLIC tb_game tb_app tb_core tb::sdl3)
-if(TB_ALLOW_DATE_OVERRIDE)
-  target_compile_definitions(tb_platform PRIVATE TB_ALLOW_DATE_OVERRIDE=1)
+if(TB_PLAYTEST_BUILD)
+  target_compile_definitions(tb_platform PRIVATE TB_PLAYTEST_BUILD=1)
 endif()
 
 add_executable(advent_of_lan entry/main.c)

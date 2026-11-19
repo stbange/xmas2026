@@ -12,7 +12,7 @@ option(TB_BUILD_GAME "Build the game executable (needs SDL3)" ON)
 option(TB_COVERAGE "Instrument game code for coverage (GCC/Clang)" OFF)
 option(TB_SANITIZE "Build with AddressSanitizer + UBSan" OFF)
 option(TB_WERROR "Treat warnings as errors" ON)
-option(TB_ALLOW_DATE_OVERRIDE "Allow --date / ?date= in this build" OFF)
+option(TB_PLAYTEST_BUILD "Playtest build: honour --playtest/?playtest=1 and --date/?date=" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(Warnings)

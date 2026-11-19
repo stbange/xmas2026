@@ -29,6 +29,7 @@
   (function () {
     var b = window.TB_BUILD || { id: "dev", version: "?" };
     document.getElementById("build").textContent = "v" + b.version + " · build " + b.id;
+    if (b.playtest) document.getElementById("title").textContent = "ADVENT OF LAN · PLAYTEST";
   })();
   // URL parameters become command-line arguments (?playtest=1, ?date=YYYY-MM-DD).
   function tbArgsFromQuery(search) {

@@ -21,7 +21,7 @@
       "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "TB_ALLOW_DATE_OVERRIDE": "ON"
+        "TB_PLAYTEST_BUILD": "ON"
       }
     },
     {
@@ -83,7 +83,7 @@
       "inherits": "web-release",
       "displayName": "Web (Emscripten) playtest build",
       "cacheVariables": {
-        "TB_ALLOW_DATE_OVERRIDE": "ON"
+        "TB_PLAYTEST_BUILD": "ON"
       }
     }
   ],

@@ -34,8 +34,9 @@ static tb_host g_host;
 
 static void test_headless_run_finishes_after_ticks(void)
 {
-    const char *argv[] = {"game", "--headless", "--ticks", "10", "--date", "2026-12-24", "--data-dir", DATA};
-    TEST_ASSERT_EQUAL_INT(TB_HOST_CONTINUE, tb_host_init(&g_host, 8, argv));
+    const char *argv[] = {"game",       "--headless", "--ticks",    "10", "--date",
+                          "2026-12-24", "--playtest", "--data-dir", DATA};
+    TEST_ASSERT_EQUAL_INT(TB_HOST_CONTINUE, tb_host_init(&g_host, 9, argv));
     TEST_ASSERT_TRUE(g_host.progress_loaded);
     TEST_ASSERT_FALSE(g_host.has_window);
     int frames = 0;

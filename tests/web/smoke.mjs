@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Web smoke test: serves a web build directory and checks it boots in a real
 // browser on a desktop and a mobile profile.
-// Usage: node tests/web/smoke.mjs <web-dist-dir>
+// Usage: node tests/web/smoke.mjs <web-dist-dir> [--release]
+// --release: the build must ignore ?playtest=1 and ?date= (the friends' site).
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
@@ -11,6 +12,7 @@ const require = createRequire(import.meta.url);
 const { chromium, devices } = require("playwright");
 
 const dist = path.resolve(process.argv[2] || "build/web-playtest/web-dist");
+const release = process.argv.includes("--release");
 const BOOT_TIMEOUT_MS = 30000;
 const TYPES = {
   ".html": "text/html", ".js": "text/javascript", ".wasm": "application/wasm",
@@ -59,8 +61,12 @@ async function boot(browser, label, contextOptions, query) {
   if (canvas.w <= 0 || canvas.h <= 0) problems.push(`canvas has no size: ${JSON.stringify(canvas)}`);
   if (scrollW > viewW) problems.push(`horizontal scroll: ${scrollW} > ${viewW}`);
   const playtestLogged = logs.some((l) => l.includes("[playtest]"));
-  if (query.includes("playtest=1") !== playtestLogged) {
-    problems.push(`URL parameters not passed to the game (playtest logged: ${playtestLogged})`);
+  const wantPlaytest = query.includes("playtest=1") && !release;
+  if (wantPlaytest !== playtestLogged) {
+    problems.push(`playtest switch handled wrongly (playtest logged: ${playtestLogged}, release: ${release})`);
+  }
+  if (release && query.includes("playtest=1") && !logs.some((l) => l.includes("--playtest is ignored"))) {
+    problems.push("release build did not report ignoring ?playtest=1");
   }
   console.log(`${problems.length ? "FAIL" : "ok  "} ${label}: ${build}, canvas ${canvas.w}x${canvas.h}`);
   return problems.map((p) => `${label}: ${p}`);
@@ -79,6 +85,12 @@ async function persistence(browser) {
   };
   await page.goto(`${baseUrl}/index.html?date=2026-12-05`);
   const first = await waitFor(/portals open:/);
+  if (release) {
+    const ignored = logs.some((l) => l.includes("--date is ignored"));
+    await context.close();
+    console.log(`${ignored ? "ok  " : "FAIL"} release ignores ?date=: ${first}`);
+    return ignored ? [] : ["release: ?date= was not ignored"];
+  }
   logs.length = 0;
   await page.waitForTimeout(500); // let the IndexedDB sync finish
   await page.goto(`${baseUrl}/index.html`);

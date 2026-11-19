@@ -56,12 +56,16 @@ When the relay server time is available and the local clock is more than 36 hour
 - **THEN** the effective date is derived from the server time and NOEL shows the time-travel message
 
 ### Requirement: Playtest override
-Playtest builds SHALL accept a playtest switch (`?playtest=1` on the web, `--playtest` on desktop) that opens all portals, and builds compiled with date override support SHALL accept an explicit date (`?date=YYYY-MM-DD`, `--date`). Release builds without that support SHALL ignore these parameters.
+Playtest builds SHALL accept a playtest switch (`?playtest=1` on the web, `--playtest` on desktop) that opens all portals, and an explicit date (`?date=YYYY-MM-DD`, `--date`). Release builds SHALL ignore both parameters.
 
 #### Scenario: Playtesting all levels early
-- **WHEN** the gh-pages build is opened with `?playtest=1` on 2026-11-25
+- **WHEN** the playtest build on the gh-pages site is opened with `?playtest=1` on 2026-11-25
 - **THEN** all 24 portals are open and a debug overlay is visible
 
 #### Scenario: Release build ignores override
-- **WHEN** a release build without date override support is started with `--date 2026-12-24` on 2026-12-02
+- **WHEN** a release build is started with `--date 2026-12-24` on 2026-12-02
 - **THEN** only portals 1 and 2 are open
+
+#### Scenario: Release build ignores playtest switch
+- **WHEN** the release build on the gh-pages site is opened with `?playtest=1` on 2026-12-02
+- **THEN** only portals 1 and 2 are open and no debug overlay is shown

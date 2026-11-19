@@ -64,10 +64,13 @@ These are friends, not an e-sports league: the rule uses the local clock.
 - The lobby/relay server sends its UTC time when you connect. If the local
   clock is more than 36 hours ahead of the server, NOEL makes a joke
   ("Nice try, Marty McFly") and the server time is used instead. That's all.
-- **Playtest builds** (the `gh-pages` web build, debug builds) take a
-  `?playtest=1` URL parameter or `--playtest` flag that opens all portals and
-  shows a debug overlay. Release builds also take `?date=2026-12-10` /
-  `--date` only when built with `TB_ALLOW_DATE_OVERRIDE`.
+- **Playtest builds** (`https://stbange.github.io/xmas2026/playtest/`, debug
+  builds; CMake option `TB_PLAYTEST_BUILD`) take a `?playtest=1` URL
+  parameter or `--playtest` flag that opens all portals and shows a debug
+  overlay, and `?date=2026-12-10` / `--date` to pretend it is another day.
+- **Release builds** (the site the friends use,
+  `https://stbange.github.io/xmas2026/`, and the native downloads) ignore
+  both switches, so nobody can peek ahead or unlock doors early by URL.
 
 ### Content drop (spoiler protection, optional)
 The web release can deliver levels in daily *content packs*: a scheduled

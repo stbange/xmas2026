@@ -37,7 +37,7 @@ void tb_host_update_calendar(tb_host *host)
     in.utc_offset = local.utc_offset;
     in.persisted = host->save.unlocked;
     in.playtest = host->app.args.playtest;
-#ifdef TB_ALLOW_DATE_OVERRIDE
+#ifdef TB_PLAYTEST_BUILD
     in.allow_date_override = true;
 #endif
     in.has_date_override = host->app.args.has_date;
@@ -95,10 +95,15 @@ tb_host_result tb_host_init(tb_host *host, int argc, const char *const *argv)
         tb_log_info("%s", tb_args_usage());
         return TB_HOST_SUCCESS;
     }
-#ifndef TB_ALLOW_DATE_OVERRIDE
+#ifndef TB_PLAYTEST_BUILD
+    /* Release builds (the friends' site) ignore the playtest switches. */
     if (args.has_date) {
         tb_log_warn("--date is ignored in this build");
         args.has_date = false;
+    }
+    if (args.playtest) {
+        tb_log_warn("--playtest is ignored in this build");
+        args.playtest = false;
     }
 #endif
     tb_log_info("%s%s%s", tb_version_banner(), args.headless ? " [headless]" : "",
