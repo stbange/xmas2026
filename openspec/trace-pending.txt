@@ -1,21 +1,15 @@
 # Spec scenarios that have no test yet. This list must only shrink.
 # Format: <capability>: <Scenario name>. Checked by tools/ci/spec_trace.py.
 
-advent-calendar: Playtesting all levels early
 content-licensing: Credits disclaimer
 content-licensing: Default settings
 content-licensing: Incompatible dependency
 content-licensing: Missing attribution
 content-licensing: Public build
-festive-hall: Finding a door
 festive-hall: Newly opened portal
 festive-hall: November arena
 festive-hall: Phone performance
-festive-hall: Restored hall
-festive-hall: Return after finishing
-festive-hall: Shutdown act
 festive-hall: Taking a trophy
-festive-hall: Three baubles
 input-controls: Contextual use
 input-controls: Gamepad only
 input-controls: Phone

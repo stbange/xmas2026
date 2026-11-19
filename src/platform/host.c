@@ -4,6 +4,8 @@
 #include "core/log.h"
 #include "core/version.h"
 #include "platform/fs.h"
+#include "app/hud.h"
+#include "app/world_view.h"
 #include "render/view.h"
 
 #include <SDL3/SDL.h>
@@ -51,6 +53,20 @@ void tb_host_update_calendar(tb_host *host)
             tb_log_warn("could not save progress");
         }
     }
+    tb_app_set_progress(&host->app, &host->save, &host->calendar);
+}
+
+/* The session finished a level: store its updated progress. */
+static void store_app_progress(tb_host *host)
+{
+    if (!host->app.save_dirty) {
+        return;
+    }
+    host->app.save_dirty = false;
+    host->save = host->app.save;
+    if (!tb_save_store(&host->storage.io, &host->save)) {
+        tb_log_warn("could not save progress");
+    }
 }
 
 bool tb_host_load_progress(tb_host *host)
@@ -94,18 +110,20 @@ static bool create_renderer(tb_host *host)
         return false;
     }
     host->has_renderer = true;
-    static const uint8_t floor[4] = {120, 110, 100, 255}, wall[4] = {150, 140, 170, 255},
-                         ceiling[4] = {70, 70, 90, 255};
+    host->app.world_changed = true;
+    return true;
+}
+
+static bool upload_world(tb_host *host)
+{
     tb_mesh mesh;
     tb_mesh_init(&mesh, NULL);
-    bool ok = tb_mesh_add_geometry(&mesh, &host->app.geometry, floor, wall, ceiling) &&
-              tb_renderer_upload_world(&host->renderer, &mesh);
+    bool ok = tb_world_mesh_build(&host->app, &mesh) && tb_renderer_upload_world(&host->renderer, &mesh);
     tb_mesh_free(&mesh);
-    tb_scene_init_test_arena(&host->scene);
-    host->static_lights = host->scene.light_count;
     if (!ok) {
-        tb_log_error("renderer: could not upload the level");
+        tb_log_error("renderer: could not upload the world");
     }
+    host->app.world_changed = false;
     return ok;
 }
 
@@ -256,18 +274,24 @@ tb_host_result tb_host_event(tb_host *host, const void *event)
     return TB_HOST_CONTINUE;
 }
 
-static void draw_frame(tb_host *host)
+static bool draw_frame(tb_host *host)
 {
+    if (host->app.world_changed && !upload_world(host)) {
+        return false;
+    }
     int w = 0, h = 0;
     tb_window_pixel_size(&host->window, &w, &h);
     tb_view_layout layout = tb_view_layout_for(w, h, (tb_res_preset)host->settings.resolution_preset);
     host->renderer.options.palette_quantize = host->settings.palette_quantize;
     host->renderer.options.dithering = host->settings.dithering;
-    tb_scene_reset_dynamic(&host->scene, host->static_lights);
     float aspect = (float)layout.internal_w / (float)layout.internal_h;
-    tb_scene_from_sim(&host->scene, &host->app.sim, 0, host->settings.fov * TB_PI / 180.0f, aspect);
+    tb_world_scene(&host->app, &host->scene, host->settings.fov * TB_PI / 180.0f, aspect);
     tb_renderer_draw(&host->renderer, &host->scene, &layout, w, h);
+    tb_ui_begin(&host->ui, layout.ui_w, layout.ui_h);
+    tb_hud_build(&host->app, &host->scene, aspect, &host->ui);
+    tb_renderer_draw_ui(&host->renderer, &host->ui, &layout);
     tb_window_swap(&host->window);
+    return true;
 }
 
 tb_host_result tb_host_iterate(tb_host *host)
@@ -278,8 +302,13 @@ tb_host_result tb_host_iterate(tb_host *host)
     tb_input in = tb_controls_input(&host->controls);
     tb_app_set_input(&host->app, 0, &in);
     tb_app_status status = tb_app_frame(&host->app, tb_host_now(host), NULL);
-    if (host->has_renderer) {
-        draw_frame(host);
+    store_app_progress(host);
+    /* Re-check the calendar once a minute so doors open at midnight. */
+    if (host->progress_loaded && tb_app_tick(&host->app) % ((uint64_t)60u * TB_SIM_HZ) == 0) {
+        tb_host_update_calendar(host);
+    }
+    if (host->has_renderer && !draw_frame(host)) {
+        return TB_HOST_FAILURE;
     }
     if (status == TB_APP_DONE) {
         tb_log_info("ticks=%llu checksum=%016llx", (unsigned long long)tb_app_tick(&host->app),

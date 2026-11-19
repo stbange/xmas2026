@@ -1,6 +1,7 @@
 tb_add_library(tb_core
   alloc.c
   arena.c
+  date.c
   dynarr.c
   hash.c
   hashmap.c

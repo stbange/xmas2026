@@ -46,7 +46,11 @@ typedef enum tb_pickup_kind {
     TB_PICKUP_FLOPPY /* value = 0..2 */
 } tb_pickup_kind;
 
-typedef enum tb_trigger_kind { TB_TRIGGER_CHECKPOINT = 0, TB_TRIGGER_EXIT = 1 } tb_trigger_kind;
+typedef enum tb_trigger_kind {
+    TB_TRIGGER_CHECKPOINT = 0,
+    TB_TRIGGER_EXIT = 1,
+    TB_TRIGGER_PORTAL = 2 /* id = advent day */
+} tb_trigger_kind;
 
 typedef struct tb_entity {
     uint16_t gen;
@@ -89,6 +93,7 @@ typedef struct tb_player {
     uint32_t revive_progress; /* ticks a teammate has held Use */
     tb_checkpoint checkpoint;
     bool at_exit;
+    int32_t portal; /* advent day of the portal touched this tick, 0 = none */
     bool completed;
     uint8_t floppies; /* floppies counted for this player */
     bool bauble;      /* present when the bauble was collected */

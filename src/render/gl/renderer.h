@@ -9,6 +9,7 @@
 #include "render/mesh.h"
 #include "render/palette.h"
 #include "render/scene.h"
+#include "render/ui.h"
 #include "render/view.h"
 
 #define TB_SHADOW_MAP_SIZE 1024
@@ -22,7 +23,9 @@ typedef struct tb_render_options {
 typedef struct tb_renderer {
     tb_gl gl;
     bool gles; /* OpenGL ES 3 / WebGL 2 shader dialect */
-    GLuint scene_prog, depth_prog, post_prog;
+    GLuint scene_prog, depth_prog, post_prog, ui_prog;
+    GLuint ui_vao, ui_vbo;
+    tb_mesh ui_mesh;
     GLuint world_vao, world_vbo;
     GLsizei world_vertices;
     GLuint dyn_vao, dyn_vbo;
@@ -47,6 +50,9 @@ void tb_renderer_set_palette(tb_renderer *r, const tb_palette *p);
  * the window's default framebuffer. */
 void tb_renderer_draw(tb_renderer *r, const tb_scene *scene, const tb_view_layout *layout, int window_w,
                       int window_h);
+/* Draws the UI over the presented frame (UI pixels map onto the
+ * letterboxed viewport). Call after tb_renderer_draw, before swapping. */
+void tb_renderer_draw_ui(tb_renderer *r, const tb_ui *ui, const tb_view_layout *layout);
 /* Reads back the low-res scene image after post-processing (tests). RGBA,
  * bottom-up rows; out must hold internal_w * internal_h * 4 bytes. */
 bool tb_renderer_read_scene(tb_renderer *r, const tb_view_layout *layout, uint8_t *out);

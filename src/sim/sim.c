@@ -400,6 +400,7 @@ static void touch_entities(tb_sim *sim, int slot)
     tb_vec3 plo, phi;
     player_box(p, &plo, &phi);
     p->at_exit = false;
+    p->portal = 0;
     for (int i = 0; i < TB_MAX_ENTITIES; i++) {
         tb_entity *e = &sim->entities[i];
         if (e->type != TB_ENT_PICKUP && e->type != TB_ENT_TRIGGER) {
@@ -418,8 +419,10 @@ static void touch_entities(tb_sim *sim, int slot)
             if (!p->checkpoint.valid || p->checkpoint.id < e->value) {
                 save_checkpoint(p, e->value);
             }
-        } else {
+        } else if (e->kind == TB_TRIGGER_EXIT) {
             p->at_exit = true;
+        } else {
+            p->portal = e->value;
         }
     }
 }

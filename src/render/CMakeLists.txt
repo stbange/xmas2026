@@ -5,6 +5,7 @@ tb_add_library(tb_render
   mesh.c
   palette.c
   scene.c
+  ui.c
   view.c
   gl/gl_api.c
   gl/renderer.c

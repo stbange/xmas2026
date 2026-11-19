@@ -26,7 +26,7 @@ typedef struct tb_host {
     tb_controls controls;
     tb_renderer renderer;
     tb_scene scene;
-    int static_lights;
+    tb_ui ui;
     bool progress_loaded;
     uint64_t start_counter;
     tb_storage storage;

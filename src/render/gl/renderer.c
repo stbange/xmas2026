@@ -101,6 +101,20 @@ static const char *k_post_fs =
     "  o_color = vec4(c, 1.0);\n"
     "}\n";
 
+static const char *k_ui_vs =
+    "in vec3 a_pos;\n"
+    "in vec4 a_color;\n"
+    "uniform vec2 u_size;\n"
+    "out vec4 v_color;\n"
+    "void main() {\n"
+    "  v_color = a_color;\n"
+    "  gl_Position = vec4(a_pos.x / u_size.x * 2.0 - 1.0, 1.0 - a_pos.y / u_size.y * 2.0, 0.0, 1.0);\n"
+    "}\n";
+
+static const char *k_ui_fs = "in vec4 v_color;\n"
+                             "out vec4 o_color;\n"
+                             "void main() { o_color = v_color; }\n";
+
 static GLuint compile(tb_renderer *r, GLenum type, const char *src)
 {
     tb_gl *gl = &r->gl;
@@ -249,6 +263,7 @@ bool tb_renderer_create(tb_renderer *r, tb_gl_loader loader, bool gles)
     r->options.dithering = true;
     r->options.shadows = true;
     tb_mesh_init(&r->dynamic, NULL);
+    tb_mesh_init(&r->ui_mesh, NULL);
     const char *missing = NULL;
     if (!tb_gl_load(&r->gl, loader, &missing)) {
         snprintf(r->error, sizeof(r->error), "OpenGL function missing: %s", missing);
@@ -258,10 +273,12 @@ bool tb_renderer_create(tb_renderer *r, tb_gl_loader loader, bool gles)
     r->scene_prog = program(r, k_scene_vs, k_scene_fs);
     r->depth_prog = r->scene_prog ? program(r, k_depth_vs, k_depth_fs) : 0;
     r->post_prog = r->depth_prog ? program(r, k_post_vs, k_post_fs) : 0;
-    if (!r->post_prog) {
+    r->ui_prog = r->post_prog ? program(r, k_ui_vs, k_ui_fs) : 0;
+    if (!r->ui_prog) {
         return false;
     }
     make_buffer(gl, &r->world_vao, &r->world_vbo);
+    make_buffer(gl, &r->ui_vao, &r->ui_vbo);
     make_buffer(gl, &r->dyn_vao, &r->dyn_vbo);
     gl->GenVertexArrays(1, &r->post_vao);
 
@@ -285,18 +302,20 @@ void tb_renderer_destroy(tb_renderer *r)
     tb_gl *gl = &r->gl;
     if (gl->DeleteProgram) {
         free_targets(r);
-        GLuint vaos[3] = {r->world_vao, r->dyn_vao, r->post_vao};
-        GLuint vbos[2] = {r->world_vbo, r->dyn_vbo};
+        GLuint vaos[4] = {r->world_vao, r->dyn_vao, r->post_vao, r->ui_vao};
+        GLuint vbos[3] = {r->world_vbo, r->dyn_vbo, r->ui_vbo};
         GLuint texs[2] = {r->shadow_tex, r->lut_tex};
-        gl->DeleteVertexArrays(3, vaos);
-        gl->DeleteBuffers(2, vbos);
+        gl->DeleteVertexArrays(4, vaos);
+        gl->DeleteBuffers(3, vbos);
         gl->DeleteTextures(2, texs);
         gl->DeleteFramebuffers(1, &r->shadow_fbo);
         gl->DeleteProgram(r->scene_prog);
         gl->DeleteProgram(r->depth_prog);
         gl->DeleteProgram(r->post_prog);
+        gl->DeleteProgram(r->ui_prog);
     }
     tb_mesh_free(&r->dynamic);
+    tb_mesh_free(&r->ui_mesh);
     memset(&r->gl, 0, sizeof(r->gl));
 }
 
@@ -484,6 +503,34 @@ void tb_renderer_draw(tb_renderer *r, const tb_scene *scene, const tb_view_layou
     gl->Clear(TB_GL_COLOR_BUFFER_BIT);
     gl->Viewport(layout->viewport_x, layout->viewport_y, layout->viewport_w, layout->viewport_h);
     post_pass(r, r->post_color, 0);
+}
+
+void tb_renderer_draw_ui(tb_renderer *r, const tb_ui *ui, const tb_view_layout *layout)
+{
+    tb_gl *gl = &r->gl;
+    tb_dynarr_clear(&r->ui_mesh.vertices);
+    for (int i = 0; i < ui->count; i++) {
+        const tb_ui_rect *q = &ui->rects[i];
+        float x0 = q->x, y0 = q->y, x1 = (float)(q->x + q->w), y1 = (float)(q->y + q->h);
+        tb_vec3 pts[4] = {{x0, y0, 0}, {x0, y1, 0}, {x1, y1, 0}, {x1, y0, 0}};
+        tb_mesh_add_polygon(&r->ui_mesh, pts, 4, tb_v3(0, 0, 1), q->color);
+    }
+    if (r->ui_mesh.vertices.len == 0) {
+        return;
+    }
+    gl->BindFramebuffer(TB_GL_FRAMEBUFFER, 0);
+    gl->Viewport(layout->viewport_x, layout->viewport_y, layout->viewport_w, layout->viewport_h);
+    gl->Enable(TB_GL_BLEND);
+    gl->BlendFunc(TB_GL_SRC_ALPHA, TB_GL_ONE_MINUS_SRC_ALPHA);
+    gl->UseProgram(r->ui_prog);
+    gl->Uniform2f(gl->GetUniformLocation(r->ui_prog, "u_size"), (float)ui->width, (float)ui->height);
+    gl->BindBuffer(TB_GL_ARRAY_BUFFER, r->ui_vbo);
+    gl->BufferData(TB_GL_ARRAY_BUFFER, (GLsizeiptr)(r->ui_mesh.vertices.len * sizeof(tb_vertex)),
+                   r->ui_mesh.vertices.data, TB_GL_DYNAMIC_DRAW);
+    gl->BindVertexArray(r->ui_vao);
+    gl->DrawArrays(TB_GL_TRIANGLES, 0, (GLsizei)r->ui_mesh.vertices.len);
+    gl->BindVertexArray(0);
+    gl->Disable(TB_GL_BLEND);
 }
 
 bool tb_renderer_read_scene(tb_renderer *r, const tb_view_layout *layout, uint8_t *out)

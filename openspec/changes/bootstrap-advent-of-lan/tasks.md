@@ -38,7 +38,7 @@
 ## 5. Renderer
 
 - [x] 5.1 Low-res render target with integer nearest-neighbour upscale and letterboxing (resolution presets, split-screen rectangles)
-- [ ] 5.1b UI layer at 2x internal resolution (pixel font, HUD)
+- [x] 5.1b UI layer at 2x internal resolution (own 5x7 pixel font, HUD, briefing and results panels, playtest overlay)
 - [x] 5.2 Forward lighting with up to 16 point lights per view, shadowed directional (moon) light, fog (see design 15)
 - [ ] 5.2b Point/spot light shadows (cube atlas), deferred G-buffer path for many lights, automatic forward fallback
 - [x] 5.3 Palette LUT quantisation and Bayer dithering (runtime-switchable)
@@ -66,12 +66,13 @@
 
 ## 8. The Hall
 
-- [ ] 8.1 Greybox hall: doors 1–24 (two floors), tree, NOEL's desk, trophy wall, jukebox, cocoa bar, LAN corner, arena
-- [ ] 8.2 Portal states (closed with countdown, open with preview, NEW tag) bound to the calendar
-- [ ] 8.3 Tree progress (baubles, light rings), act-dependent mood, restored state
-- [ ] 8.4 Snowball Arena with bots
-- [ ] 8.5 Level entry/exit flow, briefing player, results screen, memory album
-- [ ] 8.6 Tests: game tests for every `festive-hall` scenario; phone performance check (manual + recorded)
+- [x] 8.1 Greybox hall built in code: doors 1-24 (two floors, stairs, balcony), voxel tree, NOEL's desk, trophy wall, jukebox, cocoa bar, LAN corner, arena wing
+- [ ] 8.2 Portal states bound to the calendar: closed doors block and show a countdown, open doors glow, today's door is gold with NEW (done); live render-to-texture previews (open, needs 5.5)
+- [x] 8.3 Tree progress (one bauble and one ring of lights per finished level), act-dependent mood, restored state with top ornament
+- [ ] 8.4 Snowball Arena with bots (room exists; bots and match rules open)
+- [x] 8.5 Level entry/exit flow: portal -> briefing -> level -> results -> back in front of the door; progress saved; levels are a placeholder test course until group 9
+- [ ] 8.5b Memory album at NOEL's desk; trophy wall interaction
+- [ ] 8.6 Tests: game tests for every `festive-hall` scenario (5 of 9 done: finding a door, return after finishing, three baubles, shutdown act, restored hall); phone performance check
 
 ## 9. Level framework & first levels
 

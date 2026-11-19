@@ -4,7 +4,7 @@
 #ifndef TB_GAME_CALENDAR_H
 #define TB_GAME_CALENDAR_H
 
-#include "app/args.h"
+#include "core/date.h"
 #include "core/types.h"
 
 #define TB_PORTAL_COUNT   24
@@ -43,6 +43,8 @@ bool tb_portal_is_open(tb_portal_mask mask, int portal);
 int64_t tb_portal_seconds_until(const tb_calendar_state *s, int portal);
 /* "opens in 1 d 12 h" / "opens in 5 h 3 min" / "opens in 42 s"; empty if open. */
 void tb_portal_countdown_text(const tb_calendar_state *s, int portal, char *out, size_t out_len);
+/* 0 before 1 December 2026, 1..24 during the calendar, 25 afterwards. */
+int tb_calendar_day(const tb_calendar_state *s);
 /* In an online session the host's open mask applies to everyone. */
 tb_portal_mask tb_calendar_session_mask(tb_portal_mask host_open);
 /* "1-7, 10, 12-13", or "none". */

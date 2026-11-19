@@ -26,6 +26,7 @@ typedef ptrdiff_t GLsizeiptr;
     X(void, Disable, (GLenum))                                                                               \
     X(void, CullFace, (GLenum))                                                                              \
     X(void, DepthFunc, (GLenum))                                                                             \
+    X(void, BlendFunc, (GLenum, GLenum))                                                                     \
     X(void, PolygonOffset, (GLfloat, GLfloat))                                                               \
     X(GLenum, GetError, (void))                                                                              \
     X(void, ReadPixels, (GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void *))                            \
@@ -100,6 +101,9 @@ int tb_gl_load(tb_gl *gl, tb_gl_loader loader, const char **missing);
 #define TB_GL_BACK                   0x0405
 #define TB_GL_FRONT                  0x0404
 #define TB_GL_CULL_FACE              0x0B44
+#define TB_GL_BLEND                  0x0BE2
+#define TB_GL_SRC_ALPHA              0x0302
+#define TB_GL_ONE_MINUS_SRC_ALPHA    0x0303
 #define TB_GL_DEPTH_TEST             0x0B71
 #define TB_GL_POLYGON_OFFSET_FILL    0x8037
 #define TB_GL_UNSIGNED_BYTE          0x1401

@@ -8,7 +8,7 @@
 #include "sim/sim.h"
 
 #define TB_SCENE_MAX_LIGHTS 16
-#define TB_SCENE_MAX_BOXES  256
+#define TB_SCENE_MAX_BOXES  512
 
 typedef struct tb_light {
     tb_vec3 pos;

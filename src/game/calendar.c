@@ -122,6 +122,14 @@ void tb_portal_mask_text(tb_portal_mask mask, char *out, size_t out_len)
     }
 }
 
+int tb_calendar_day(const tb_calendar_state *s)
+{
+    int64_t day0 = tb_days_from_civil(TB_CALENDAR_YEAR, TB_CALENDAR_MONTH, 1);
+    int64_t today = s->effective_local / DAY; /* dates are after 1970: non-negative */
+    int64_t n = today - day0 + 1;
+    return n < 1 ? 0 : (n > TB_PORTAL_COUNT ? TB_PORTAL_COUNT + 1 : (int)n);
+}
+
 tb_portal_mask tb_calendar_session_mask(tb_portal_mask host_open)
 {
     return host_open & TB_ALL_PORTALS;
