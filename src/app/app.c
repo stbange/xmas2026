@@ -4,8 +4,18 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "core/log.h"
+
 #define TB_MAX_STEPS_PER_FRAME 8u
 #define CONFIRM_BUTTONS        (TB_BTN_FIRE | TB_BTN_USE | TB_BTN_JUMP)
+
+static void end_level(tb_app *app)
+{
+    tb_script_destroy(app->script);
+    app->script = NULL;
+    app->level = NULL;
+    app->objective[0] = '\0';
+}
 
 static void reset_sim(tb_app *app, tb_vec3 spawn, float yaw)
 {
@@ -25,6 +35,7 @@ static void reset_sim(tb_app *app, tb_vec3 spawn, float yaw)
 
 static void load_hall(tb_app *app, tb_vec3 spawn, float yaw)
 {
+    end_level(app);
     tb_hall_build_geometry(&app->hall, app->open, &app->geometry, app->brushes);
     reset_sim(app, spawn, yaw);
     tb_hall_add_portals(&app->hall, app->open, &app->sim);
@@ -32,27 +43,50 @@ static void load_hall(tb_app *app, tb_vec3 spawn, float yaw)
     app->flow_ticks = 0;
 }
 
-/* Placeholder course until the real level packages exist: the test arena
- * with the bauble on the ramp platform, three floppies, targets and an exit. */
 static void load_level(tb_app *app, int day)
 {
-    tb_geometry_build_test_arena(&app->geometry, app->brushes);
-    reset_sim(app, tb_v3(0, -16, 0.01f), TB_PI / 2.0f);
-    tb_sim *s = &app->sim;
-    tb_sim_add_pickup(s, TB_PICKUP_BAUBLE, tb_v3(0, 18, 3.5f), 0, 0, false);
-    tb_sim_add_pickup(s, TB_PICKUP_FLOPPY, tb_v3(6.5f, 0, 0.9f), 0, 0, false);
-    tb_sim_add_pickup(s, TB_PICKUP_FLOPPY, tb_v3(-10, -10, 0.5f), 1, 0, false);
-    tb_sim_add_pickup(s, TB_PICKUP_FLOPPY, tb_v3(11, 0, 1.5f), 2, 0, false);
-    tb_sim_add_pickup(s, TB_PICKUP_WEAPON, tb_v3(-3, -12, 0.5f), TB_WEAPON_TEST_SHOTGUN, 16, false);
-    for (int i = 0; i < 4; i++) {
-        tb_sim_add_target(s, tb_v3(-6.0f + 4.0f * (float)i, 4.0f, 0.9f), 40);
-    }
-    tb_sim_add_trigger(s, TB_TRIGGER_CHECKPOINT, tb_v3(-4, 8, 0), tb_v3(4, 10, 3), 1);
-    tb_sim_add_trigger(s, TB_TRIGGER_EXIT, tb_v3(-3, -20, 0), tb_v3(3, -17.5f, 3), 0);
+    end_level(app);
+    const tb_level_def *def = tb_level_def_get(day);
+    app->level = def;
     app->level_day = day;
-    app->level_start = s->tick;
+    tb_level_build(def, &app->geometry, app->brushes);
+    tb_sim_config cfg;
+    tb_level_sim_config(def, &app->geometry, app->args.seed + (uint64_t)day, TB_DIFF_COLA, &cfg);
+    tb_sim_init(&app->sim, &cfg);
+    tb_sim_add_player(&app->sim, 0);
+    app->world_changed = true;
+    char err[TB_SCRIPT_TEXT];
+    app->script = tb_level_begin(def, &app->sim, err, sizeof(err));
+    snprintf(app->objective, sizeof(app->objective), "%s", def->objective ? def->objective : "");
+    if (err[0]) {
+        tb_log_error("level %d script: %s", day, err);
+        tb_app_say(app, "NOEL: My level script crashed. Just find the exit!");
+    }
+    tb_bot_init(&app->bot, def->golden_path, def->golden_count);
+    const tb_level_info *info = tb_level_info_get(day);
+    tb_log_info("level %d loaded: %s%s%s", day, info->title, def->placeholder ? " (test course)" : "",
+                app->args.bot ? " [bot]" : "");
+    app->level_start = app->sim.tick;
     app->flow = TB_FLOW_LEVEL;
     app->flow_ticks = 0;
+}
+
+static void level_tick(tb_app *app)
+{
+    if (app->args.bot) {
+        app->input[0] = tb_bot_think(&app->bot, &app->sim, 0);
+    }
+    tb_sim_step(&app->sim, app->input);
+    if (app->script) {
+        tb_script_tick(app->script);
+        const char *say = tb_script_take_say(app->script);
+        if (say) {
+            tb_app_say(app, say);
+        }
+        if (tb_script_objective(app->script)[0]) {
+            snprintf(app->objective, sizeof(app->objective), "%s", tb_script_objective(app->script));
+        }
+    }
 }
 
 void tb_app_say(tb_app *app, const char *message)
@@ -69,6 +103,14 @@ void tb_app_init(tb_app *app, const tb_args *args)
     tb_save_defaults(&app->save);
     tb_hall_layout(&app->hall);
     load_hall(app, app->hall.spawn, app->hall.spawn_yaw);
+    if (args->level) {
+        load_level(app, args->level); /* playtest: straight into the level */
+    }
+}
+
+void tb_app_shutdown(tb_app *app)
+{
+    end_level(app);
 }
 
 void tb_app_set_progress(tb_app *app, const tb_save *save, const tb_calendar_state *calendar)
@@ -114,6 +156,9 @@ static void finish_level(tb_app *app)
     const tb_level_info *info = tb_level_info_get(app->level_day);
     snprintf(app->results, sizeof(app->results), "DAY %d - %s\n%s\nTime %u:%02u%s", app->level_day,
              info ? info->title : "?", summary, ms / 60000u, (ms / 1000u) % 60u, first ? "" : " (replay)");
+    tb_log_info("level %d complete in %u ms: floppies %d/3, bauble %s, challenge %s", app->level_day, ms,
+                (p->floppies & 1) + ((p->floppies >> 1) & 1) + ((p->floppies >> 2) & 1),
+                app->sim.bauble_collected ? "yes" : "no", app->sim.challenge_done ? "won" : "no");
     app->flow = TB_FLOW_RESULTS;
     app->flow_ticks = 0;
 }
@@ -154,7 +199,7 @@ static void tick(tb_app *app)
         }
         break;
     case TB_FLOW_LEVEL:
-        tb_sim_step(&app->sim, app->input);
+        level_tick(app);
         if (app->sim.level_complete) {
             finish_level(app);
         }

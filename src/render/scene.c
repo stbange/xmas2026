@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "render/scene.h"
 
+#include <math.h>
 #include <string.h>
 
 void tb_scene_init_test_arena(tb_scene *s)
@@ -63,8 +64,20 @@ void tb_scene_from_sim(tb_scene *s, const tb_sim *sim, int player, float fov_h, 
     static const uint8_t c_shot[4] = {255, 255, 255, 255};
     static const uint8_t c_player[4] = {60, 160, 90, 255}; /* teammates: green */
 
+    static const uint8_t c_decoy[4] = {255, 80, 80, 255}; /* Holo-Santa */
+    static const uint8_t c_usable[TB_USE_KIND_COUNT][4] = {
+        {230, 200, 40, 255}, {235, 235, 240, 255}, {200, 30, 40, 255}, {40, 40, 90, 255}, {255, 80, 60, 255}};
+    static const uint8_t c_mover[4] = {150, 140, 175, 255};
+
     const tb_player *p = &sim->players[player];
     s->camera.eye = tb_v3_add(p->move.origin, tb_v3(0, 0, tb_move_eye_height(&p->move)));
+    if (sim->shake_ticks > 0) {
+        /* Earthquake: a deterministic wobble that fades out. */
+        float k = 0.12f * (float)(sim->shake_ticks > 60 ? 60 : sim->shake_ticks) / 60.0f;
+        float t = (float)sim->tick;
+        s->camera.eye =
+            tb_v3_add(s->camera.eye, tb_v3(sinf(t * 1.7f) * k, cosf(t * 2.3f) * k, sinf(t * 3.1f) * k));
+    }
     s->camera.yaw = p->move.yaw;
     s->camera.pitch = p->move.pitch;
     s->camera.fov_y = tb_fov_horizontal_to_vertical(fov_h, aspect);
@@ -75,7 +88,7 @@ void tb_scene_from_sim(tb_scene *s, const tb_sim *sim, int player, float fov_h, 
             continue;
         }
         tb_vec3 mins, maxs;
-        tb_move_hull(q->move.crouched, &mins, &maxs);
+        tb_move_state_hull(&q->move, &mins, &maxs);
         tb_scene_add_box(s, tb_v3_add(q->move.origin, mins), tb_v3_add(q->move.origin, maxs), c_player,
                          false);
     }
@@ -91,7 +104,24 @@ void tb_scene_from_sim(tb_scene *s, const tb_sim *sim, int player, float fov_h, 
             break;
         case TB_ENT_PROJECTILE:
             tb_scene_add_box(s, lo, hi, c_shot, true);
-            tb_scene_add_light(s, e->origin, tb_v3(0.8f, 0.9f, 1.2f), 4.0f);
+            tb_scene_add_light(s, e->origin,
+                               e->from_enemy ? tb_v3(1.4f, 0.4f, 1.2f) : tb_v3(0.8f, 0.9f, 1.2f), 4.0f);
+            break;
+        case TB_ENT_ENEMY: {
+            const tb_enemy_def *def = tb_enemy_get((tb_enemy_kind)e->kind);
+            tb_scene_add_box(s, lo, hi, e->stun_ticks ? c_stunned : def->color, false);
+            break;
+        }
+        case TB_ENT_USABLE:
+            tb_scene_add_box(s, lo, hi, c_usable[e->kind % TB_USE_KIND_COUNT], false);
+            break;
+        case TB_ENT_MOVER: {
+            tb_vec3 shift = tb_v3_scale(e->offset, e->progress);
+            tb_scene_add_box(s, tb_v3_add(lo, shift), tb_v3_add(hi, shift), c_mover, false);
+            break;
+        }
+        case TB_ENT_DECOY:
+            tb_scene_add_box(s, lo, hi, c_decoy, true);
             break;
         default:
             break; /* triggers are invisible */

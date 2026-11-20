@@ -32,6 +32,8 @@ const char *tb_args_usage(void)
            "  --seed N           simulation seed\n"
            "  --playtest         open all portals, show debug overlay\n"
            "  --date YYYY-MM-DD  pretend it is this date (debug/playtest builds only)\n"
+           "  --level N          start in level N (debug/playtest builds only)\n"
+           "  --bot              let the test bot play the level (with --level)\n"
            "  --data-dir PATH    store saves and settings in PATH\n"
            "  --help             show this help\n";
 }
@@ -47,6 +49,16 @@ bool tb_args_parse(tb_args *out, int argc, const char *const *argv, char *err, s
             out->headless = true;
         } else if (strcmp(a, "--playtest") == 0) {
             out->playtest = true;
+        } else if (strcmp(a, "--bot") == 0) {
+            out->bot = true;
+        } else if (strcmp(a, "--level") == 0) {
+            uint64_t day = 0;
+            if (!parse_u64(next, &day) || day < 1 || day > 24) {
+                snprintf(err, err_len, "--level needs a day 1-24");
+                return false;
+            }
+            out->level = (int)day;
+            i++;
         } else if (strcmp(a, "--help") == 0 || strcmp(a, "-h") == 0) {
             out->help = true;
         } else if (strcmp(a, "--ticks") == 0) {

@@ -114,15 +114,44 @@ static bool hall_mesh(const tb_app *app, tb_mesh *m)
     return ok;
 }
 
+static bool is_mover_brush(const tb_sim *sim, int brush)
+{
+    for (int i = 0; i < TB_MAX_ENTITIES; i++) {
+        if (sim->entities[i].type == TB_ENT_MOVER && sim->entities[i].value == brush) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool level_mesh(const tb_app *app, tb_mesh *m)
+{
+    const tb_level_def *def = app->level;
+    bool ok = true;
+    /* Static brushes: movers are drawn per frame, player clips not at all. */
+    for (int i = 0; i < app->geometry.count && ok; i++) {
+        const tb_brush *b = &app->geometry.brushes[i];
+        if (!(b->contents & TB_CONTENTS_SOLID) || is_mover_brush(&app->sim, i)) {
+            continue;
+        }
+        tb_geometry one = {(tb_brush *)b, 1, 1};
+        ok = tb_mesh_add_geometry(m, &one, def->floor, def->wall, def->ceiling);
+    }
+    for (int i = 0; i < def->prop_count && ok; i++) {
+        const tb_level_prop *p = &def->props[i];
+        uint8_t c[4] = {p->color[0], p->color[1], p->color[2], p->emissive ? 128 : 255};
+        ok = add_box(m, p->mins, p->maxs, c);
+    }
+    return ok;
+}
+
 bool tb_world_mesh_build(const tb_app *app, tb_mesh *mesh)
 {
     tb_dynarr_clear(&mesh->vertices);
-    if (app->flow == TB_FLOW_HALL || app->flow == TB_FLOW_BRIEFING) {
+    if (app->flow == TB_FLOW_HALL || app->flow == TB_FLOW_BRIEFING || !app->level) {
         return hall_mesh(app, mesh);
     }
-    static const uint8_t floor[4] = {120, 110, 100, 255}, wall[4] = {150, 140, 170, 255},
-                         ceiling[4] = {70, 70, 90, 255};
-    return tb_mesh_add_geometry(mesh, &app->geometry, floor, wall, ceiling);
+    return level_mesh(app, mesh);
 }
 
 static void hall_scene(const tb_app *app, tb_scene *s)
@@ -199,12 +228,47 @@ static void hall_scene(const tb_app *app, tb_scene *s)
     }
 }
 
+#define LEVEL_LIGHTS 12 /* leaves room for muzzle and projectile lights */
+
+/* The level's lights whose group is on, nearest to the camera first. */
+static void level_scene(const tb_app *app, tb_scene *s)
+{
+    const tb_level_def *def = app->level;
+    const tb_player *p = &app->sim.players[0];
+    s->ambient = def->ambient;
+    s->sun_color = def->sun_color;
+    s->fog_color = def->fog_color;
+    s->fog_start = def->fog_start;
+    s->fog_end = def->fog_end;
+    bool taken[TB_LEVEL_MAX_LIGHTS] = {false};
+    for (int n = 0; n < LEVEL_LIGHTS; n++) {
+        int best = -1;
+        float best_d = 1e30f;
+        for (int i = 0; i < def->light_count && i < TB_LEVEL_MAX_LIGHTS; i++) {
+            const tb_level_light *l = &def->lights[i];
+            float d = tb_v3_len(tb_v3_sub(l->pos, p->move.origin)) - l->radius;
+            if (!taken[i] && tb_sim_light_on(&app->sim, l->group) && d < best_d) {
+                best_d = d;
+                best = i;
+            }
+        }
+        if (best < 0) {
+            break;
+        }
+        taken[best] = true;
+        tb_scene_add_light(s, def->lights[best].pos, def->lights[best].color, def->lights[best].radius);
+    }
+}
+
 void tb_world_scene(const tb_app *app, tb_scene *scene, float fov_h, float aspect)
 {
     tb_scene_init_test_arena(scene);
-    if (app->flow == TB_FLOW_HALL || app->flow == TB_FLOW_BRIEFING) {
+    if (app->flow == TB_FLOW_HALL || app->flow == TB_FLOW_BRIEFING || !app->level) {
         tb_scene_reset_dynamic(scene, 0); /* the hall has its own lights */
         hall_scene(app, scene);
+    } else {
+        tb_scene_reset_dynamic(scene, 0);
+        level_scene(app, scene);
     }
     tb_scene_from_sim(scene, &app->sim, 0, fov_h, aspect);
 }

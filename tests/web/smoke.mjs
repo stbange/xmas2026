@@ -2,7 +2,7 @@
 // Web smoke test: serves a web build directory and checks it boots in a real
 // browser on a desktop and a mobile profile.
 // Usage: node tests/web/smoke.mjs <web-dist-dir> [--release]
-// --release: the build must ignore ?playtest=1 and ?date= (the friends' site).
+// --release: the build must ignore ?playtest=1, ?level= and ?date= (the friends' site).
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
@@ -65,8 +65,13 @@ async function boot(browser, label, contextOptions, query) {
   if (wantPlaytest !== playtestLogged) {
     problems.push(`playtest switch handled wrongly (playtest logged: ${playtestLogged}, release: ${release})`);
   }
-  if (release && query.includes("playtest=1") && !logs.some((l) => l.includes("--playtest is ignored"))) {
+  if (release && query.includes("playtest=1") && !logs.some((l) => l.includes("--playtest") && l.includes("ignored"))) {
     problems.push("release build did not report ignoring ?playtest=1");
+  }
+  const levelLogged = logs.some((l) => /level 1 loaded: Baublegum City/.test(l));
+  const wantLevel = query.includes("level=1") && !release;
+  if (wantLevel !== levelLogged) {
+    problems.push(`?level=1 handled wrongly (level loaded: ${levelLogged}, release: ${release})`);
   }
   console.log(`${problems.length ? "FAIL" : "ok  "} ${label}: ${build}, canvas ${canvas.w}x${canvas.h}`);
   return problems.map((p) => `${label}: ${p}`);
@@ -116,6 +121,7 @@ let problems = [];
 try {
   problems = problems.concat(await boot(browser, "desktop", { viewport: { width: 1280, height: 720 } }, ""));
   problems = problems.concat(await boot(browser, "desktop playtest", { viewport: { width: 1280, height: 720 } }, "?playtest=1"));
+  problems = problems.concat(await boot(browser, "day 1 direct", { viewport: { width: 1280, height: 720 } }, "?playtest=1&level=1&bot=1"));
   problems = problems.concat(await boot(browser, "mobile", { ...devices["Pixel 7"] }, ""));
   if (process.env.TB_SKIP_PERSISTENCE !== "1") problems = problems.concat(await persistence(browser));
 } finally {

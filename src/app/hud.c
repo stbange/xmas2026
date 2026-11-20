@@ -68,8 +68,19 @@ static void briefing(const tb_app *app, tb_ui *ui)
     tb_ui_wrap(info->briefing, ui->width / 8 - 16, wrapped, sizeof(wrapped));
     tb_ui_text(ui, ui->width / 2, y, 1, TB_ALIGN_CENTER, WHITE, wrapped);
     y += TB_FONT_LINE * tb_ui_text_lines(wrapped) + 14;
-    tb_ui_text(ui, ui->width / 2, y, 1, TB_ALIGN_CENTER, SNOW,
-               "THIS IS A TEST COURSE UNTIL THE REAL LEVEL ARRIVES.\nFIND THE BAUBLE, THEN THE EXIT.");
+    const tb_level_def *def = tb_level_def_get(app->level_day);
+    if (def->placeholder) {
+        tb_ui_text(ui, ui->width / 2, y, 1, TB_ALIGN_CENTER, SNOW,
+                   "THIS IS A TEST COURSE UNTIL THE REAL LEVEL ARRIVES.\nFIND THE BAUBLE, THEN THE EXIT.");
+    } else {
+        char toys[192] = "TODAY:";
+        for (int i = 0; i < def->manifest.mechanic_count; i++) {
+            size_t n = strlen(toys);
+            snprintf(toys + n, sizeof(toys) - n, "%s %s", i ? " -" : "", def->manifest.mechanics[i]);
+        }
+        tb_ui_wrap(toys, ui->width / 8 - 16, wrapped, sizeof(wrapped));
+        tb_ui_text(ui, ui->width / 2, y, 1, TB_ALIGN_CENTER, SNOW, wrapped);
+    }
     tb_ui_text(ui, ui->width / 2, ui->height * 7 / 8 - 20, 1, TB_ALIGN_CENTER, GOLD,
                "CLICK, E OR SPACE TO START");
 }
@@ -107,6 +118,24 @@ static void status(const tb_app *app, tb_ui *ui)
     if (p->state != TB_PLAYER_ALIVE) {
         tb_ui_text(ui, cx, cy - 40, 2, TB_ALIGN_CENTER, RED, "SNOWED UNDER... RESPAWNING");
     }
+    /* Level item bars and states. */
+    int y = ui->height - 34;
+    if (p->inv.items[TB_ITEM_JETPACK]) {
+        static const uint8_t back[4] = {30, 30, 50, 200}, fuel[4] = {255, 150, 40, 255};
+        const int bar_w = 60;
+        tb_ui_text(ui, 8, y, 1, TB_ALIGN_LEFT, WHITE, "JET");
+        tb_ui_rect_add(ui, 30, y, bar_w, 6, back);
+        tb_ui_rect_add(ui, 30, y, bar_w * p->jet_fuel / TB_JET_FUEL_MAX, 6, fuel);
+        y -= 10;
+    }
+    if (p->inv.items[TB_ITEM_HOLO_SANTA]) {
+        snprintf(line, sizeof(line), "HOLO-SANTA %s", p->decoy_cooldown ? "RECHARGING" : "READY");
+        tb_ui_text(ui, 8, y, 1, TB_ALIGN_LEFT, p->decoy_cooldown ? SNOW : GOLD, line);
+        y -= 10;
+    }
+    if (p->move.shrunk) {
+        tb_ui_text(ui, 8, y, 1, TB_ALIGN_LEFT, GOLD, "SHRUNK!");
+    }
 }
 
 void tb_hud_build(const tb_app *app, const tb_scene *scene, float aspect, tb_ui *ui)
@@ -123,8 +152,9 @@ void tb_hud_build(const tb_app *app, const tb_scene *scene, float aspect, tb_ui 
         status(app, ui);
         const tb_player *p = &app->sim.players[0];
         int f = (p->floppies & 1) + ((p->floppies >> 1) & 1) + ((p->floppies >> 2) & 1);
-        snprintf(line, sizeof(line), "%s   FLOPPIES %d/3",
-                 app->sim.bauble_collected ? "BAUBLE FOUND - GO TO THE EXIT" : "FIND THE MEMORY BAUBLE", f);
+        const char *goal = app->objective[0] ? app->objective : "FIND THE MEMORY BAUBLE";
+        snprintf(line, sizeof(line), "%.96s   FLOPPIES %d/3",
+                 app->sim.bauble_collected && !app->script ? "BAUBLE FOUND - GO TO THE EXIT" : goal, f);
         tb_ui_text_boxed(ui, ui->width / 2, 8, 1, TB_ALIGN_CENTER, GOLD, line);
         break;
     }
@@ -143,7 +173,9 @@ void tb_hud_build(const tb_app *app, const tb_scene *scene, float aspect, tb_ui 
     }
     }
     if (app->message_ticks > 0 && app->flow != TB_FLOW_BRIEFING) {
-        tb_ui_text_boxed(ui, ui->width / 2, 22, 1, TB_ALIGN_CENTER, SNOW, app->message);
+        char wrapped[256];
+        tb_ui_wrap(app->message, ui->width / 6 - 4, wrapped, sizeof(wrapped));
+        tb_ui_text_boxed(ui, ui->width / 2, 22, 1, TB_ALIGN_CENTER, SNOW, wrapped);
     }
     if (app->args.playtest) {
         snprintf(line, sizeof(line), "PLAYTEST - TICK %llu - ACT %s - %d/24 OPEN",

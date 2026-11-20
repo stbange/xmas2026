@@ -11,8 +11,9 @@
 
 typedef enum tb_item_id {
     TB_ITEM_NONE = 0,
-    TB_ITEM_NOEL_PAD, /* base kit: map, objectives, hints */
-    TB_ITEM_JETPACK,  /* example loaner item */
+    TB_ITEM_NOEL_PAD,   /* base kit: map, objectives, hints */
+    TB_ITEM_JETPACK,    /* day 1: fuel-limited jetpack (ability 1) */
+    TB_ITEM_HOLO_SANTA, /* day 1: decoy hologram (ability 2) */
     TB_ITEM_COUNT
 } tb_item_id;
 

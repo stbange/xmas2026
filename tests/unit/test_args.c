@@ -66,6 +66,24 @@ static void test_errors(void)
     TEST_ASSERT_FALSE(parse(&a, 3, seed_bad));
     const char *date_bad[] = {"game", "--date", "2026-13-01"};
     TEST_ASSERT_FALSE(parse(&a, 3, date_bad));
+    const char *level_bad[] = {"game", "--level", "25"};
+    TEST_ASSERT_FALSE(parse(&a, 3, level_bad));
+    TEST_ASSERT_NOT_NULL(strstr(g_err, "--level"));
+    const char *level_zero[] = {"game", "--level", "0"};
+    TEST_ASSERT_FALSE(parse(&a, 3, level_zero));
+    const char *level_missing[] = {"game", "--level"};
+    TEST_ASSERT_FALSE(parse(&a, 2, level_missing));
+}
+
+static void test_level_and_bot(void)
+{
+    const char *argv[] = {"game", "--level", "1", "--bot"};
+    tb_args a;
+    TEST_ASSERT_TRUE(parse(&a, 4, argv));
+    TEST_ASSERT_EQUAL_INT(1, a.level);
+    TEST_ASSERT_TRUE(a.bot);
+    TEST_ASSERT_NOT_NULL(strstr(tb_args_usage(), "--level"));
+    TEST_ASSERT_NOT_NULL(strstr(tb_args_usage(), "--bot"));
 }
 
 static void test_data_dir(void)
@@ -118,6 +136,7 @@ int main(void)
     RUN_TEST(test_defaults);
     RUN_TEST(test_all_options);
     RUN_TEST(test_errors);
+    RUN_TEST(test_level_and_bot);
     RUN_TEST(test_data_dir);
     RUN_TEST(test_parse_date_validation);
     RUN_TEST(test_usage_mentions_options);

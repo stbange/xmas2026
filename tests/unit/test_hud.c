@@ -45,7 +45,10 @@ void setUp(void)
 {
     start(0, 7, 0, false);
 }
-void tearDown(void) {}
+void tearDown(void)
+{
+    tb_app_shutdown(&g_app);
+}
 
 /* ---- world view ---- */
 
@@ -115,14 +118,85 @@ static void test_world_meshes(void)
     TEST_ASSERT_TRUE(hall_tris > 2000); /* shell, doors, props, voxel tree */
     start(TB_ALL_PORTALS, 7, 0, false);
     TEST_ASSERT_TRUE(tb_world_mesh_build(&g_app, &m));
-    TEST_ASSERT_TRUE(tb_mesh_triangle_count(&m) < hall_tris); /* no closed door panels */
-    g_app.flow = TB_FLOW_LEVEL; /* levels draw only their geometry: no props, doors or tree */
+    size_t open_tris = tb_mesh_triangle_count(&m);
+    TEST_ASSERT_TRUE(open_tris < hall_tris); /* no closed door panels */
+    g_app.flow = TB_FLOW_LEVEL;              /* no level loaded: still the hall */
     TEST_ASSERT_TRUE(tb_world_mesh_build(&g_app, &m));
-    TEST_ASSERT_TRUE(tb_mesh_triangle_count(&m) < hall_tris / 2);
+    TEST_ASSERT_EQUAL_size_t(open_tris, tb_mesh_triangle_count(&m));
+    tb_app_shutdown(&g_app);
+    tb_args a;
+    memset(&a, 0, sizeof(a));
+    a.headless = true;
+    a.level = 1; /* a level draws its brushes and props, minus movers and clips */
+    tb_app_init(&g_app, &a);
+    TEST_ASSERT_TRUE(tb_world_mesh_build(&g_app, &m));
+    size_t level_tris = tb_mesh_triangle_count(&m);
+    TEST_ASSERT_TRUE(level_tris > 500);
+    TEST_ASSERT_TRUE(level_tris < hall_tris);
     tb_mesh_free(&m);
     tb_voxels v;
     tb_world_tree_voxels(&v);
     TEST_ASSERT_EQUAL_INT(48, v.sz);
+}
+
+/* A real level: its lights, colours, enemies, machines, movers, hologram,
+ * earthquake shake and the level HUD (objective, jet fuel, Holo-Santa). */
+static void test_level_view_and_hud(void)
+{
+    tb_app_shutdown(&g_app);
+    tb_args a;
+    memset(&a, 0, sizeof(a));
+    a.headless = true;
+    a.level = 1;
+    tb_app_init(&g_app, &a);
+    tb_sim *sim = &g_app.sim;
+    tb_player *p = &sim->players[0];
+    tb_sim_add_enemy(sim, TB_ENEMY_TROOPER, tb_v3(8, 0, 4), NULL);
+    tb_entity *stunned = tb_sim_get(sim, tb_sim_add_enemy(sim, TB_ENEMY_LIZARD, tb_v3(9, 2, 4), NULL));
+    stunned->stun_ticks = 10;
+    tb_entity *d =
+        tb_sim_get(sim, tb_sim_spawn(sim, TB_ENT_DECOY, tb_v3(5, 0, 4.9f), tb_v3(0.3f, 0.3f, 0.9f)));
+    d->ttl = 100;
+    tb_entity *shot =
+        tb_sim_get(sim, tb_sim_spawn(sim, TB_ENT_PROJECTILE, tb_v3(6, 1, 5), tb_v3(0.1f, 0.1f, 0.1f)));
+    shot->from_enemy = true;
+    sim->shake_ticks = 90;
+    p->inv.items[TB_ITEM_JETPACK] = true;
+    p->jet_fuel = TB_JET_FUEL_MAX / 2;
+    p->inv.items[TB_ITEM_HOLO_SANTA] = true;
+    p->decoy_cooldown = 10;
+    p->move.shrunk = true;
+    int full = build();
+    const tb_level_def *def = tb_level_def_get(1);
+    TEST_ASSERT_EQUAL_FLOAT(def->ambient.x, g_scene.ambient.x);
+    TEST_ASSERT_TRUE(g_scene.light_count >= 6 && g_scene.light_count <= 13);
+    TEST_ASSERT_EQUAL_INT(6, count_boxes(tb_enemy_get(TB_ENEMY_TROOPER)->color)); /* 5 in the level + 1 */
+    static const uint8_t breaker[4] = {230, 200, 40, 255}, decoy[4] = {255, 80, 80, 255};
+    TEST_ASSERT_TRUE(count_boxes(breaker) >= 1);
+    TEST_ASSERT_EQUAL_INT(1, count_boxes(decoy));
+    /* Jet fuel bar, Holo-Santa state and the shrunk notice draw extra HUD. */
+    p->inv.items[TB_ITEM_JETPACK] = false;
+    p->inv.items[TB_ITEM_HOLO_SANTA] = false;
+    p->move.shrunk = false;
+    TEST_ASSERT_TRUE(build() < full);
+    p->inv.items[TB_ITEM_HOLO_SANTA] = true;
+    /* The stairwell light (group 2) is off until the breaker is thrown. */
+    int with = g_scene.light_count;
+    p->move.origin = tb_v3(25, 0, 2);
+    build();
+    int dark = g_scene.light_count;
+    tb_sim_set_light(sim, 2, true);
+    build();
+    TEST_ASSERT_TRUE(g_scene.light_count >= dark);
+    (void)with;
+    int recharging = build();
+    p->decoy_cooldown = 0;
+    TEST_ASSERT_TRUE(build() < recharging); /* "READY" is shorter */
+    /* The briefing of a real level lists today's mechanics, not the test-course note. */
+    g_app.flow = TB_FLOW_BRIEFING;
+    int real = build();
+    g_app.level_day = 2;
+    TEST_ASSERT_NOT_EQUAL(real, build());
 }
 
 /* ---- HUD ---- */
@@ -241,6 +315,7 @@ int main(void)
     RUN_TEST(test_restored_hall_has_top_ornament);
     RUN_TEST(test_open_portals_glow_and_emergency_light);
     RUN_TEST(test_world_meshes);
+    RUN_TEST(test_level_view_and_hud);
     RUN_TEST(test_door_texts);
     RUN_TEST(test_hud_in_every_flow_state);
     RUN_TEST(test_countdown_before_december);

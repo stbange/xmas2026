@@ -148,9 +148,11 @@ tb_host_result tb_host_init(tb_host *host, int argc, const char *const *argv)
         tb_log_warn("--date is ignored in this build");
         args.has_date = false;
     }
-    if (args.playtest) {
-        tb_log_warn("--playtest is ignored in this build");
+    if (args.playtest || args.level || args.bot) {
+        tb_log_warn("--playtest, --level and --bot are ignored in this build");
         args.playtest = false;
+        args.level = 0;
+        args.bot = false;
     }
 #endif
     tb_log_info("%s%s%s", tb_version_banner(), args.headless ? " [headless]" : "",
@@ -320,6 +322,7 @@ tb_host_result tb_host_iterate(tb_host *host)
 
 void tb_host_quit(tb_host *host)
 {
+    tb_app_shutdown(&host->app);
     if (host->has_renderer) {
         tb_renderer_destroy(&host->renderer);
         host->has_renderer = false;

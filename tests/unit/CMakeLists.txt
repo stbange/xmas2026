@@ -9,13 +9,13 @@ foreach(m args app controls flow hud)
   tb_add_unit_test(${m} LIBS tb_app SOURCES ${TB_TEST_SUPPORT})
 endforeach()
 
-foreach(m geometry movement combat weapons inventory sim replay)
+foreach(m geometry movement combat weapons inventory sim replay world ai)
   tb_add_unit_test(${m} LIBS tb_sim SOURCES ${TB_TEST_SUPPORT})
 endforeach()
 
 tb_add_unit_test(render_cpu LIBS tb_render SOURCES ${TB_TEST_SUPPORT})
 
-foreach(m calendar save settings hall)
+foreach(m calendar save settings hall level script bot)
   tb_add_unit_test(${m} LIBS tb_game)
 endforeach()
 

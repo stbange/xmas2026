@@ -94,6 +94,30 @@ Santa with a minigun and a present-mortar, on the top of the parking deck.
 - All 20 interaction types fire their events (unit tests on the
   interaction module).
 
+## First playable (change `add-level-01-baublegum-city`)
+What the first build does, and how it differs from the plan above:
+
+- **Route:** roof (crash site, breaker switch) → stairwell → concourse
+  (toilet, cola machine, arcade cabinet, cinema with projector button) →
+  toy store (Shrink-O-Matic, mouse-sized vent) → atrium (earthquake, the
+  bridge falls, jetpack over the chasm) → parking deck (Battlelord) → exit.
+- **Floppies:** behind the cinema screen (raise it with the projector
+  button); the arcade gives one on the third play (the poster code comes
+  later); on the high atrium ledge (jetpack) instead of the neon sign.
+- **Interior Decorator:** use one of each of the five object kinds in the
+  level (switch, toilet, vending machine, arcade, button). It grows towards
+  20 kinds as mirrors, glass and the rest arrive.
+- **Not yet:** mirrors, breakable glass, night-vision goggles, the arcade
+  mini-game, the turret nest, toy trains, sprite enemies (coloured boxes
+  for now), music. The Mighty Boot is a selectable melee weapon for now,
+  not a kick that works while you hold another weapon.
+- **Length:** the golden-path bot needs about 1.5 minutes. A first-time
+  player should take roughly 8–12 minutes, short of the 20-minute target.
+  The level grows as set pieces arrive.
+- **Testing:** `--level 1 --bot` (`?level=1&bot=1` on the playtest site)
+  watches the bot play. The bot finishes on every difficulty; on
+  Nightmare it sometimes loses to the boss.
+
 ## Research checklist
 - E1L1–E1L3 longplay (rooftop, cinema, Red Light District street).
 - Shrinker/stomp timing; jetpack fuel; Holoduke duration.

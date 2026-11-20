@@ -29,6 +29,10 @@ typedef struct tb_move_params {
 #define TB_PLAYER_EYE           1.6f
 #define TB_PLAYER_CROUCH_EYE    0.8f
 #define TB_MIN_WALK_NORMAL      0.7f
+#define TB_SHRUNK_WIDTH         0.3f
+#define TB_SHRUNK_HEIGHT        0.5f
+#define TB_SHRUNK_EYE           0.4f
+#define TB_SHRUNK_SPEED         0.6f
 
 typedef struct tb_move_state {
     tb_vec3 origin; /* feet centre */
@@ -38,11 +42,17 @@ typedef struct tb_move_state {
     bool crouched;
     bool jump_held; /* jump must be released before the next jump */
     bool jumping;   /* rising from a jump (not from walking up a slope) */
+    bool shrunk;    /* mouse-sized (shrink ray / shrink zones) */
     tb_vec3 ground_normal;
 } tb_move_state;
 
 void tb_move_default_params(tb_move_params *p);
 void tb_move_hull(bool crouched, tb_vec3 *mins, tb_vec3 *maxs);
+/* The hull for the current state (shrunk, crouched or standing). */
+void tb_move_state_hull(const tb_move_state *s, tb_vec3 *mins, tb_vec3 *maxs);
+/* Shrinks or grows the player. Growing only happens when there is room;
+ * returns true if the state now matches `shrunk`. */
+bool tb_move_set_shrunk(tb_move_state *s, const tb_geometry *g, bool shrunk);
 float tb_move_eye_height(const tb_move_state *s);
 /* Advances the state by dt seconds using one tick of input. */
 void tb_move_step(tb_move_state *s, const tb_input *in, const tb_move_params *p, const tb_geometry *g,

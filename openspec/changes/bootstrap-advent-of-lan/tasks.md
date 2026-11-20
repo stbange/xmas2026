@@ -76,11 +76,13 @@
 
 ## 9. Level framework & first levels
 
-- [ ] 9.1 Lua sandbox and level-script API; entity I/O runtime
-- [ ] 9.2 Golden-path bot framework (navmesh, waypoint scripts, mechanic actions)
+- [x] 9.1 Lua sandbox and level-script API; entity I/O runtime
+- [x] 9.2 Golden-path bot framework (waypoint scripts, mechanic actions)
+- [ ] 9.2b Navmesh for bots and the reachability invariants (Unreachable secret)
 - [ ] 9.3 Mechanic module skeletons with tests: `status_bars`, `vehicle`, `heightfield`, `economy`, `squad`
 - [ ] 9.4 Personalisation pack loader (local file / URL), defaults
-- [ ] 9.5 Create changes `add-level-01-baublegum-city`, `add-level-02-sky-sled`, `add-level-03-operation-tinselium` from the concept docs
+- [x] 9.5 Create and implement change `add-level-01-baublegum-city`
+- [ ] 9.5b Create changes `add-level-02-sky-sled`, `add-level-03-operation-tinselium` from the concept docs
 - [ ] 9.6 Tests: framework scenarios from `level-framework` and `meta-story`
 
 ## 10. Multiplayer

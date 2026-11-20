@@ -15,6 +15,7 @@ typedef enum tb_ammo_type {
     TB_AMMO_BULLETS,
     TB_AMMO_ROCKETS,
     TB_AMMO_CELLS,
+    TB_AMMO_PIPES,
     TB_AMMO_COUNT
 } tb_ammo_type;
 
@@ -24,6 +25,9 @@ typedef enum tb_weapon_id {
     TB_WEAPON_SNOWBALL_BLASTER, /* base kit: infinite projectile, charge shot */
     TB_WEAPON_TEST_SHOTGUN,     /* test loaner: hitscan, pellets */
     TB_WEAPON_TEST_LAUNCHER,    /* test loaner: rockets with splash */
+    TB_WEAPON_MIGHTY_BOOT,      /* day 1: quick kick */
+    TB_WEAPON_PIPE_BAUBLES,     /* day 1: thrown, bouncing, remote-detonated */
+    TB_WEAPON_GIFT_SHRINKER,    /* day 1: shrink ray (trophy) */
     TB_WEAPON_COUNT
 } tb_weapon_id;
 
@@ -43,7 +47,11 @@ typedef struct tb_weapon_def {
     uint32_t charge_ticks;  /* ticks to full charge */
     int32_t charged_damage; /* damage at full charge */
     uint32_t charged_stun_ticks;
-    bool loaner; /* lives only in its level */
+    bool loaner;           /* lives only in its level */
+    bool gravity;          /* projectile falls */
+    bool bounce;           /* projectile bounces off walls instead of exploding */
+    bool remote;           /* projectile waits for alt-fire to detonate */
+    uint32_t shrink_ticks; /* hitscan effect: shrinks the target */
 } tb_weapon_def;
 
 const tb_weapon_def *tb_weapon_get(tb_weapon_id id);

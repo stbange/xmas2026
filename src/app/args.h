@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* Command-line options (the web shell turns URL parameters into the same
- * arguments: ?playtest=1 -> --playtest, ?date=YYYY-MM-DD -> --date ...). */
+ * arguments: ?playtest=1 -> --playtest, ?date=YYYY-MM-DD -> --date,
+ * ?level=N -> --level N, ?bot=1 -> --bot). */
 #ifndef TB_APP_ARGS_H
 #define TB_APP_ARGS_H
 
@@ -12,6 +13,8 @@ typedef struct tb_args {
     bool playtest; /* open all portals + debug overlay */
     bool help;     /* print usage and exit */
     bool has_date; /* --date given (only honoured if the build allows it) */
+    int level;     /* --level N: start straight in level N (playtest builds) */
+    bool bot;      /* --bot: the golden-path bot plays the level */
     tb_date date;
     uint64_t max_ticks; /* 0 = run until quit */
     uint64_t seed;

@@ -37,7 +37,10 @@ void setUp(void)
 {
     start(0x7Fu, 7);
 }
-void tearDown(void) {}
+void tearDown(void)
+{
+    tb_app_shutdown(&g_app);
+}
 
 static void tick(int n, tb_input in)
 {
@@ -237,6 +240,57 @@ static void test_quit_and_checksum(void)
     tb_app_set_input(&g_app, -1, NULL); /* ignored */
 }
 
+/* Playtest: --level 1 --bot plays day 1 through the app, script and all. */
+static void test_bot_plays_day_one_through_the_app(void)
+{
+    tb_app_shutdown(&g_app);
+    tb_args a;
+    memset(&a, 0, sizeof(a));
+    a.headless = true;
+    a.seed = 1;
+    a.level = 1;
+    a.bot = true;
+    tb_app_init(&g_app, &a);
+    TEST_ASSERT_EQUAL_INT(TB_FLOW_LEVEL, g_app.flow);
+    TEST_ASSERT_NOT_NULL(g_app.script);
+    TEST_ASSERT_EQUAL_STRING("GET OFF THE ROOF", g_app.objective);
+    tick(1, idle());
+    TEST_ASSERT_TRUE(g_app.message_ticks > 0); /* NOEL's opening line from the script */
+    TEST_ASSERT_NOT_NULL(strstr(g_app.message, "roof"));
+    for (int t = 0; t < 20 * 60 * 60 && g_app.flow == TB_FLOW_LEVEL; t++) {
+        tick(1, idle());
+    }
+    TEST_ASSERT_EQUAL_INT(TB_FLOW_RESULTS, g_app.flow);
+    TEST_ASSERT_TRUE(g_app.save.completed & 1u);
+    TEST_ASSERT_EQUAL_HEX8(0x7, g_app.save.floppies[0]);
+    TEST_ASSERT_TRUE(g_app.save.challenges & 1u);
+    tick((int)TB_RESULTS_TICKS + 1, idle()); /* back in the hall: the script is gone */
+    TEST_ASSERT_EQUAL_INT(TB_FLOW_HALL, g_app.flow);
+    TEST_ASSERT_NULL(g_app.script);
+    TEST_ASSERT_EQUAL_STRING("", g_app.objective);
+}
+
+static void test_broken_level_script_still_plays(void)
+{
+    /* A level whose script fails at start: NOEL apologises, the level runs. */
+    tb_app_shutdown(&g_app);
+    tb_args a;
+    memset(&a, 0, sizeof(a));
+    a.headless = true;
+    a.level = 1;
+    tb_app_init(&g_app, &a);
+    tb_script_destroy(g_app.script);
+    char err[128];
+    g_app.script =
+        tb_script_create("function on_used() error('x') end", 33, "=t", &g_app.sim, err, sizeof(err));
+    TEST_ASSERT_NOT_NULL(g_app.script);
+    tb_sim_push_event(&g_app.sim, TB_EVENT_USED, 0, 0, "breaker");
+    tb_script_tick(g_app.script);
+    TEST_ASSERT_TRUE(tb_script_failed(g_app.script));
+    tick(5, idle());
+    TEST_ASSERT_EQUAL_INT(TB_FLOW_LEVEL, g_app.flow);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -248,5 +302,7 @@ int main(void)
     RUN_TEST(test_doors_open_while_in_the_hall);
     RUN_TEST(test_calendar_change_during_a_level_waits);
     RUN_TEST(test_quit_and_checksum);
+    RUN_TEST(test_bot_plays_day_one_through_the_app);
+    RUN_TEST(test_broken_level_script_still_plays);
     return UNITY_END();
 }

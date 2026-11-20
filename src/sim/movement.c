@@ -45,9 +45,38 @@ void tb_move_hull(bool crouched, tb_vec3 *mins, tb_vec3 *maxs)
     *maxs = tb_v3(h, h, crouched ? TB_PLAYER_CROUCH_HEIGHT : TB_PLAYER_HEIGHT);
 }
 
+void tb_move_state_hull(const tb_move_state *s, tb_vec3 *mins, tb_vec3 *maxs)
+{
+    if (s->shrunk) {
+        const float h = TB_SHRUNK_WIDTH * 0.5f;
+        *mins = tb_v3(-h, -h, 0.0f);
+        *maxs = tb_v3(h, h, TB_SHRUNK_HEIGHT);
+        return;
+    }
+    tb_move_hull(s->crouched, mins, maxs);
+}
+
 float tb_move_eye_height(const tb_move_state *s)
 {
-    return s->crouched ? TB_PLAYER_CROUCH_EYE : TB_PLAYER_EYE;
+    return s->shrunk ? TB_SHRUNK_EYE : (s->crouched ? TB_PLAYER_CROUCH_EYE : TB_PLAYER_EYE);
+}
+
+bool tb_move_set_shrunk(tb_move_state *s, const tb_geometry *g, bool shrunk)
+{
+    if (s->shrunk == shrunk) {
+        return true;
+    }
+    if (!shrunk) {
+        tb_vec3 mins, maxs;
+        tb_move_hull(s->crouched, &mins, &maxs);
+        tb_trace tr =
+            tb_trace_box(g, s->origin, s->origin, mins, maxs, TB_CONTENTS_SOLID | TB_CONTENTS_PLAYERCLIP);
+        if (tr.start_solid) {
+            return false; /* no room to grow yet */
+        }
+    }
+    s->shrunk = shrunk;
+    return true;
 }
 
 float tb_move_ground_speed(const tb_move_state *s)
@@ -65,7 +94,7 @@ static tb_vec3 clip_velocity(tb_vec3 v, tb_vec3 n, float overbounce)
 static tb_trace trace_hull(const tb_move_state *s, const tb_geometry *g, tb_vec3 from, tb_vec3 to)
 {
     tb_vec3 mins, maxs;
-    tb_move_hull(s->crouched, &mins, &maxs);
+    tb_move_state_hull(s, &mins, &maxs);
     return tb_trace_box(g, from, to, mins, maxs, TB_CONTENTS_SOLID | TB_CONTENTS_PLAYERCLIP);
 }
 
@@ -252,7 +281,7 @@ void tb_move_step(tb_move_state *s, const tb_input *in, const tb_move_params *p,
     tb_vec3 wish = tb_v3_add(tb_v3_scale(fwd, fm), tb_v3_scale(right, sm));
     float wish_len = tb_v3_len(wish);
     tb_vec3 wish_dir = tb_v3_normalize(wish);
-    float max_speed = p->walk_speed;
+    float max_speed = p->walk_speed * (s->shrunk ? TB_SHRUNK_SPEED : 1.0f);
     if (s->crouched) {
         max_speed *= p->crouch_factor;
     } else if (in->buttons & TB_BTN_SPRINT) {

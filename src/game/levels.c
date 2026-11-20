@@ -2,7 +2,8 @@
 #include "game/levels.h"
 
 static const tb_level_info g_levels[24] = {
-    {1, "Baublegum City", "Alien boars took over the mall. Kick, shrink and stomp your way to the roof.",
+    {1, "Baublegum City",
+     "Alien boars took over the mall. Kick, shrink and stomp your way down to the parking deck.",
      "Duke Nukem 3D"},
     {2, "Sky Sled over Frostfjord", "Fly the sky sled, claim the glimmer and grow your gingerbread castle.",
      "Magic Carpet 2"},

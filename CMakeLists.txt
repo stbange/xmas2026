@@ -19,6 +19,7 @@ include(Warnings)
 include(Coverage)
 include(BuildId)
 include(Dependencies)
+include(Embed)
 
 if(EMSCRIPTEN)
   set(TB_PLATFORM_WEB ON)

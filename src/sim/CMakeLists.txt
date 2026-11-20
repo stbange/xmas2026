@@ -1,4 +1,5 @@
 tb_add_library(tb_sim
+  ai.c
   combat.c
   geometry.c
   inventory.c
@@ -6,5 +7,6 @@ tb_add_library(tb_sim
   replay.c
   sim.c
   weapons.c
+  world.c
 )
 target_link_libraries(tb_sim PUBLIC tb_core)
